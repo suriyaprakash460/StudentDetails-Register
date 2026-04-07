@@ -8,4 +8,4 @@ conn = mysql.connector.connect(
     database="student_db"
 )
 
-print("Connected da bro 😎")
+print("Connected da bro ")
