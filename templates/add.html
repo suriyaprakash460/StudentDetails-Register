@@ -38,15 +38,13 @@
                 </label>
                 <div style="position:relative">
                     <i class="bi bi-calendar3" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)"></i>
-                    <input type="number"
-                           class="form-control"
-                           id="age"
-                           name="age"
-                           value="{{ age | default('') }}"
-                           placeholder="e.g. 20"
-                           min="1" max="120"
-                           style="padding-left:2.6rem"
-                           required>
+                    <select class="form-select"
+                            id="age"
+                            name="age"
+                            style="padding-left:2.6rem"
+                            required>
+                        <option value="" disabled selected>Select Age</option>
+                    </select>
                 </div>
                 <div class="form-text">Must be a number between 1 and 120.</div>
             </div>
@@ -89,23 +87,31 @@
                 <div class="form-text">Select student's date of birth.</div>
             </div>
 
-            <!-- Course -->
+            <!-- Course Selection (Multi-level) -->
             <div class="mb-4">
-                <label for="course" class="form-label">
+                <label class="form-label">
                     Course / Programme <span class="text-danger">*</span>
                 </label>
-                <div style="position:relative">
-                    <i class="bi bi-book-fill" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)"></i>
-                    <input type="text"
-                           class="form-control"
-                           id="course"
-                           name="course"
-                           value="{{ course | default('') }}"
-                           placeholder="e.g. Computer Science"
-                           style="padding-left:2.6rem"
-                           required>
+                <div class="row gx-2 gy-3">
+                    <div class="col-md-4">
+                        <select id="course_level" class="form-select custom-select" required>
+                            <option value="" disabled selected>Select Level</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="course_field" class="form-select custom-select" required>
+                            <option value="" disabled selected>Select Field</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="course_name_select" class="form-select custom-select" required>
+                            <option value="" disabled selected>Select Course</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-text">Enter the full programme name.</div>
+                <!-- Hidden input for the final course name used by the backend -->
+                <input type="hidden" id="course_hidden" name="course" value="{{ course | default('') }}">
+                <div class="form-text mt-2" id="coursePreview">Selected: None</div>
             </div>
 
             <!-- Address Selection -->
@@ -220,8 +226,6 @@
  * covering all of India.
  */
 
-let GEODATA = {};
-
 const el = {
     state: document.getElementById('state'),
     dist: document.getElementById('district'),
@@ -231,22 +235,43 @@ const el = {
     btnPin: document.getElementById('btnSearchPin'),
     vOpts: document.getElementById('village_options'),
     hiddenAddr: document.getElementById('address'),
-    preview: document.getElementById('combinedAddressPreview')
+    preview: document.getElementById('combinedAddressPreview'),
+    
+    // Course elements
+    cLevel: document.getElementById('course_level'),
+    cField: document.getElementById('course_field'),
+    cName: document.getElementById('course_name_select'),
+    cHidden: document.getElementById('course_hidden'),
+    cPreview: document.getElementById('coursePreview')
 };
+
+let COURSE_DATA = {};
 
 async function initGeodata() {
     try {
-        const response = await fetch('/static/india_geodata.json');
-        GEODATA = await response.json();
+        const [geoRes, courseRes] = await Promise.all([
+            fetch('/static/india_geodata.json'),
+            fetch('/static/courses.json')
+        ]);
+        
+        GEODATA = await geoRes.json();
+        COURSE_DATA = await courseRes.json();
         
         // Populate States
         const states = Object.keys(GEODATA).sort();
         states.forEach(s => el.state.add(new Option(s, s)));
 
+        // Populate Course Levels
+        const levels = Object.keys(COURSE_DATA);
+        levels.forEach(l => el.cLevel.add(new Option(l, l)));
+
         // Initialize Date Selectors
         setupDatePickers();
+        
+        // Initialize Age Selector
+        setupAgePicker();
     } catch (e) {
-        console.error("Failed to load geography data", e);
+        console.error("Failed to load data", e);
     }
 }
 
@@ -303,6 +328,49 @@ function setupDatePickers() {
         const p = aHid.value.split('-');
         if(p.length === 3) { aYear.value = p[0]; aMon.value = p[1]; aDay.value = p[2]; }
     }
+}
+
+/** 1.1.1 AGE SELECTOR SETUP **/
+function setupAgePicker() {
+    const ageSelect = document.getElementById('age');
+    const existingAge = "{{ age | default('') }}";
+    
+    for (let i = 1; i <= 120; i++) {
+        const opt = new Option(i, i);
+        if (existingAge && i == existingAge) opt.selected = true;
+        ageSelect.add(opt);
+    }
+}
+
+/** 1.2 COURSE SELECTION LOGIC **/
+el.cLevel.addEventListener('change', function() {
+    el.cField.innerHTML = '<option value="" disabled selected>Select Field</option>';
+    el.cName.innerHTML = '<option value="" disabled selected>Select Course</option>';
+    
+    if (COURSE_DATA[this.value]) {
+        const fields = Object.keys(COURSE_DATA[this.value]).sort();
+        fields.forEach(f => el.cField.add(new Option(f, f)));
+    }
+    updateCoursePreview();
+});
+
+el.cField.addEventListener('change', function() {
+    el.cName.innerHTML = '<option value="" disabled selected>Select Course</option>';
+    
+    const levelVal = el.cLevel.value;
+    if (COURSE_DATA[levelVal] && COURSE_DATA[levelVal][this.value]) {
+        const courses = COURSE_DATA[levelVal][this.value].sort();
+        courses.forEach(c => el.cName.add(new Option(c, c)));
+    }
+    updateCoursePreview();
+});
+
+el.cName.addEventListener('change', updateCoursePreview);
+
+function updateCoursePreview() {
+    const val = el.cName.value;
+    el.cHidden.value = val;
+    el.cPreview.textContent = val ? `Selected: ${val}` : 'Selected: None';
 }
 
 // 2. CASCADE LOGIC
@@ -481,6 +549,15 @@ if (nameInput) {
 /* Double-submit prevention */
 document.getElementById('addForm').addEventListener('submit', function (e) {
     const btn = document.getElementById('submitBtn');
+    
+    // Validate Course
+    if (!el.cHidden.value) {
+        e.preventDefault();
+        alert('Please select a valid Course level, field and name.');
+        return;
+    }
+
+    // Validate Address
     if (!el.hiddenAddr.value || !el.state.value || !el.dist.value || el.dist.value.includes('Select')) {
         e.preventDefault();
         alert('Please fill out all address fields correctly.');

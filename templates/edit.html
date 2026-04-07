@@ -43,15 +43,13 @@
                 </label>
                 <div style="position:relative">
                     <i class="bi bi-calendar3" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)"></i>
-                    <input type="number"
-                           class="form-control"
-                           id="age"
-                           name="age"
-                           value="{{ student[2] }}"
-                           placeholder="Age"
-                           min="1" max="120"
-                           style="padding-left:2.6rem"
-                           required>
+                    <select class="form-select"
+                            id="age"
+                            name="age"
+                            style="padding-left:2.6rem"
+                            required>
+                        <option value="" disabled selected>Select Age</option>
+                    </select>
                 </div>
                 <div class="form-text">Must be between 1 and 120.</div>
             </div>
@@ -93,22 +91,31 @@
                 <input type="hidden" name="dob" id="dob_hidden" value="{{ student[3] }}">
             </div>
 
-            <!-- Course -->
+            <!-- Course Selection (Multi-level) -->
             <div class="mb-4">
-                <label for="course" class="form-label">
+                <label class="form-label">
                     Course / Programme <span class="text-danger">*</span>
                 </label>
-                <div style="position:relative">
-                    <i class="bi bi-book-fill" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)"></i>
-                    <input type="text"
-                           class="form-control"
-                           id="course"
-                           name="course"
-                           value="{{ student[4] }}"
-                           placeholder="Course name"
-                           style="padding-left:2.6rem"
-                           required>
+                <div class="row gx-2 gy-3">
+                    <div class="col-md-4">
+                        <select id="course_level" class="form-select custom-select" required>
+                            <option value="" disabled selected>Select Level</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="course_field" class="form-select custom-select" required>
+                            <option value="" disabled selected>Select Field</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="course_name_select" class="form-select custom-select" required>
+                            <option value="" disabled selected>Select Course</option>
+                        </select>
+                    </div>
                 </div>
+                <!-- Hidden input for the final course name used by the backend -->
+                <input type="hidden" id="course_hidden" name="course" value="{{ student[4] }}">
+                <div class="form-text mt-2" id="coursePreview">Current: {{ student[4] }}</div>
             </div>
 
             <!-- Address Selection -->
@@ -220,8 +227,6 @@
  * We load a comprehensive JSON mapping of State -> District -> Taluka
  */
 
-let GEODATA = {};
-
 const el = {
     state: document.getElementById('state'),
     dist: document.getElementById('district'),
@@ -231,25 +236,47 @@ const el = {
     btnPin: document.getElementById('btnSearchPin'),
     vOpts: document.getElementById('village_options'),
     hiddenAddr: document.getElementById('address'),
-    preview: document.getElementById('combinedAddressPreview')
+    preview: document.getElementById('combinedAddressPreview'),
+    
+    // Course elements
+    cLevel: document.getElementById('course_level'),
+    cField: document.getElementById('course_field'),
+    cName: document.getElementById('course_name_select'),
+    cHidden: document.getElementById('course_hidden'),
+    cPreview: document.getElementById('coursePreview')
 };
+
+let COURSE_DATA = {};
 
 async function init() {
     try {
-        const response = await fetch('/static/india_geodata.json');
-        GEODATA = await response.json();
+        const [geoRes, courseRes] = await Promise.all([
+            fetch('/static/india_geodata.json'),
+            fetch('/static/courses.json')
+        ]);
+        
+        GEODATA = await geoRes.json();
+        COURSE_DATA = await courseRes.json();
         
         // Populate States
         const states = Object.keys(GEODATA).sort();
         states.forEach(s => el.state.add(new Option(s, s)));
 
+        // Populate Course Levels
+        const levels = Object.keys(COURSE_DATA);
+        levels.forEach(l => el.cLevel.add(new Option(l, l)));
+
         // Initialize Date Selectors
         setupDatePickers();
         
-        // Parse existing student address from DB
-        parseExisting();
+        // Initialize Age Selector
+        setupAgePicker();
+        
+        // Parse existing student data
+        parseExistingCourse();
+        parseExistingAddress();
     } catch (e) {
-        console.error("Failed to load geography data", e);
+        console.error("Failed to load data", e);
     }
 }
 
@@ -308,8 +335,72 @@ function setupDatePickers() {
     }
 }
 
+/** 1.1.1 AGE SELECTOR SETUP **/
+function setupAgePicker() {
+    const ageSelect = document.getElementById('age');
+    const existingAge = "{{ student[2] }}";
+    
+    for (let i = 1; i <= 120; i++) {
+        const opt = new Option(i, i);
+        if (existingAge && i == existingAge) opt.selected = true;
+        ageSelect.add(opt);
+    }
+}
+
+/** 1.2 COURSE SELECTION & PARSING **/
+function parseExistingCourse() {
+    const rawCourse = `{{ student[4] | e }}`;
+    if (!rawCourse) return;
+
+    for (const level in COURSE_DATA) {
+        for (const field in COURSE_DATA[level]) {
+            if (COURSE_DATA[level][field].includes(rawCourse)) {
+                el.cLevel.value = level;
+                el.cLevel.dispatchEvent(new Event('change'));
+                
+                el.cField.value = field;
+                el.cField.dispatchEvent(new Event('change'));
+                
+                el.cName.value = rawCourse;
+                updateCoursePreview();
+                return;
+            }
+        }
+    }
+}
+
+el.cLevel.addEventListener('change', function() {
+    el.cField.innerHTML = '<option value="" disabled selected>Select Field</option>';
+    el.cName.innerHTML = '<option value="" disabled selected>Select Course</option>';
+    
+    if (COURSE_DATA[this.value]) {
+        const fields = Object.keys(COURSE_DATA[this.value]).sort();
+        fields.forEach(f => el.cField.add(new Option(f, f)));
+    }
+    updateCoursePreview();
+});
+
+el.cField.addEventListener('change', function() {
+    el.cName.innerHTML = '<option value="" disabled selected>Select Course</option>';
+    
+    const levelVal = el.cLevel.value;
+    if (COURSE_DATA[levelVal] && COURSE_DATA[levelVal][this.value]) {
+        const courses = COURSE_DATA[levelVal][this.value].sort();
+        courses.forEach(c => el.cName.add(new Option(c, c)));
+    }
+    updateCoursePreview();
+});
+
+el.cName.addEventListener('change', updateCoursePreview);
+
+function updateCoursePreview() {
+    const val = el.cName.value;
+    el.cHidden.value = val;
+    el.cPreview.textContent = val ? `Current: ${val}` : `Selected: ${val}`;
+}
+
 /** 2. PARSE EXISTING ADDRESS FROM DB **/
-function parseExisting() {
+function parseExistingAddress() {
     const raw = `{{ student[5] | e }}`;
     const parts = raw.split(',').map(s => s.trim());
     
@@ -350,7 +441,6 @@ function parseExisting() {
                 }
             }, 50);
         }
-    } else {
         el.village.value = raw;
         updatePreview();
     }
@@ -529,6 +619,15 @@ init();
 /* Double-submit prevention */
 document.getElementById('editForm').addEventListener('submit', function (e) {
     const btn = document.getElementById('saveBtn');
+
+    // Validate Course
+    if (!el.cHidden.value) {
+        e.preventDefault();
+        alert('Please select a valid Course level, field and name.');
+        return;
+    }
+
+    // Validate Address
     if (!el.hiddenAddr.value || !el.state.value || !el.dist.value || el.dist.value.includes('Select')) {
         e.preventDefault();
         alert('Please fill out all address fields correctly.');

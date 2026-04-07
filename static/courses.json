@@ -1,0 +1,226 @@
+{
+  "Undergraduate": {
+    "Engineering & Technology": [
+      "B.Tech Computer Science and Engineering",
+      "B.Tech Mechanical Engineering",
+      "B.Tech Civil Engineering",
+      "B.Tech Electrical and Electronics Engineering",
+      "B.Tech Electronics and Communication Engineering",
+      "B.Tech Information Technology",
+      "B.Tech Chemical Engineering",
+      "B.Tech Biotechnology",
+      "B.Tech Aeronautical Engineering",
+      "B.Tech Automobile Engineering",
+      "B.Tech Mechatronics Engineering",
+      "B.Tech Petroleum Engineering",
+      "B.Tech Industrial Engineering",
+      "B.Tech Food Technology",
+      "B.Tech Biomedical Engineering",
+      "B.Tech Textile Engineering",
+      "B.Tech Marine Engineering",
+      "B.E. Robotics and Automation"
+    ],
+    "Medical & Health Sciences": [
+      "MBBS (Bachelor of Medicine and Bachelor of Surgery)",
+      "BDS (Bachelor of Dental Surgery)",
+      "BAMS (Bachelor of Ayurvedic Medicine and Surgery)",
+      "BHMS (Bachelor of Homoeopathic Medicine and Surgery)",
+      "B.Sc. Nursing",
+      "B.Pharma (Bachelor of Pharmacy)",
+      "BPT (Bachelor of Physiotherapy)",
+      "B.V.Sc & AH (Bachelor of Veterinary Science and Animal Husbandry)",
+      "B.Sc. Medical Lab Technology",
+      "B.Sc. Radiology and Imaging Technology",
+      "B.Sc. Optometry",
+      "B.Sc. Occupational Therapy",
+      "B.Sc. Cardiac Care Technology",
+      "B.Sc. Forensic Science",
+      "B.Sc. Dialysis Technology",
+      "B.Sc. Operation Theatre Technology"
+    ],
+    "Commerce & Management": [
+      "B.Com. (Bachelor of Commerce)",
+      "B.Com. Honors",
+      "B.Com. Accounting and Finance",
+      "B.Com. Banking and Insurance",
+      "BBA (Bachelor of Business Administration)",
+      "BBA Business Analytics",
+      "BBA Digital Marketing",
+      "BBA Human Resource Management",
+      "BBA International Business",
+      "BBA Finance",
+      "BBA Logistics and Supply Chain Management",
+      "BMS (Bachelor of Management Studies)",
+      "BFT (Bachelor of Foreign Trade)"
+    ],
+    "Science": [
+      "B.Sc. Physics",
+      "B.Sc. Chemistry",
+      "B.Sc. Mathematics",
+      "B.Sc. Zoology",
+      "B.Sc. Botany",
+      "B.Sc. Computer Science",
+      "B.Sc. Information Technology",
+      "B.Sc. Statistics",
+      "B.Sc. Psychology",
+      "B.Sc. Microbiology",
+      "B.Sc. Biotechnology",
+      "B.Sc. Agriculture",
+      "B.Sc. Geology",
+      "B.Sc. Electronics",
+      "B.Sc. Anthropology",
+      "B.Sc. Nutrition and Dietetics"
+    ],
+    "Arts, Humanities & Design": [
+      "B.A. English",
+      "B.A. History",
+      "B.A. Economics",
+      "B.A. Psychology",
+      "B.A. Sociology",
+      "B.A. Political Science",
+      "B.A. Philosophy",
+      "B.A. Journalism and Mass Communication",
+      "B.A. Tourism and Travel Management",
+      "B.A. Fine Arts (BFA)",
+      "B.Arch. (Bachelor of Architecture)",
+      "B.Des. (Bachelor of Design)",
+      "B.Des. Fashion Design",
+      "B.Des. Interior Design",
+      "B.Des. Communication Design",
+      "B.Lib.I.Sc. (Bachelor of Library and Information Science)",
+      "B.P.Ed. (Bachelor of Physical Education)"
+    ],
+    "Law": [
+      "LLB (Bachelor of Laws)",
+      "Integrated B.A. LLB",
+      "Integrated B.B.A. LLB",
+      "Integrated B.Com. LLB",
+      "Integrated B.Sc. LLB"
+    ],
+    "Computer Applications": [
+      "BCA (Bachelor of Computer Applications)",
+      "B.Sc. Data Science",
+      "B.Sc. Cybersecurity",
+      "B.Sc. Artificial Intelligence"
+    ]
+  },
+  "Postgraduate": {
+    "Engineering & Technology": [
+      "M.Tech Computer Science and Engineering",
+      "M.Tech Structural Engineering",
+      "M.Tech Thermal Engineering",
+      "M.Tech VLSI Design",
+      "M.Tech Power Systems",
+      "M.Tech Data Science",
+      "M.Tech Robotics",
+      "M.Tech Environmental Engineering",
+      "M.Tech Machine Learning"
+    ],
+    "Medical & Health Sciences": [
+      "MD (Doctor of Medicine)",
+      "MS (Master of Surgery)",
+      "MDS (Master of Dental Surgery)",
+      "M.Sc. Nursing",
+      "M.Pharma (Master of Pharmacy)",
+      "MPT (Master of Physiotherapy)",
+      "M.Sc. Medical Microbiology",
+      "M.Sc. Clinical Psychology",
+      "MPH (Master of Public Health)",
+      "MHA (Master of Health Administration)"
+    ],
+    "Commerce & Management": [
+      "MBA (Master of Business Administration)",
+      "MBA Finance",
+      "MBA Marketing",
+      "MBA Human Resource Management",
+      "MBA Operations",
+      "MBA Data Analytics",
+      "MBA Agribusiness",
+      "MBA Hospital Management",
+      "M.Com. (Master of Commerce)",
+      "PGDM (Post Graduate Diploma in Management)",
+      "MFC (Master of Finance and Control)"
+    ],
+    "Science": [
+      "M.Sc. Physics",
+      "M.Sc. Chemistry",
+      "M.Sc. Mathematics",
+      "M.Sc. Computer Science",
+      "M.Sc. Biotechnology",
+      "M.Sc. Microbiology",
+      "M.Sc. Applied Geology",
+      "M.Sc. Data Science",
+      "M.Sc. Environmental Science"
+    ],
+    "Arts & Humanities": [
+      "M.A. English",
+      "M.A. Economics",
+      "M.A. Political Science",
+      "M.A. Psychology",
+      "M.A. Sociology",
+      "M.A. Social Work (MSW)",
+      "M.A. Journalism and Mass Communication",
+      "M.Lib.I.Sc. (Master of Library and Information Science)"
+    ],
+    "Law": [
+      "LLM (Master of Laws)",
+      "LLM Corporate Law",
+      "LLM Criminal Law",
+      "LLM Intellectual Property Rights"
+    ],
+    "Computer Applications": [
+      "MCA (Master of Computer Applications)",
+      "M.Sc. Information Technology"
+    ],
+    "Education": [
+      "B.Ed. (Bachelor of Education)",
+      "M.Ed. (Master of Education)",
+      "M.A. Education"
+    ]
+  },
+  "Diploma & Certificate": {
+    "Engineering": [
+      "Diploma in Mechanical Engineering",
+      "Diploma in Civil Engineering",
+      "Diploma in Electrical Engineering",
+      "Diploma in Computer Science",
+      "Diploma in Automobile Engineering",
+      "Diploma in Chemical Engineering"
+    ],
+    "Vocational & Skill Based": [
+      "Diploma in Pharmacy (D.Pharma)",
+      "Diploma in Nursing (GNM)",
+      "Diploma in Elementary Education (D.El.Ed)",
+      "Diploma in Hotel Management",
+      "Diploma in Fashion Designing",
+      "Diploma in Digital Marketing",
+      "Diploma in Interior Design",
+      "Diploma in Yoga",
+      "Certificate in Graphic Design",
+      "Certificate in Web Development"
+    ],
+    "Others": [
+      "ITI Electrician",
+      "ITI Fitter",
+      "ITI Welder",
+      "ITI Diesel Mechanic",
+      "ITI COPA"
+    ]
+  },
+  "Doctorate": {
+    "Research": [
+      "Ph.D. in Science",
+      "Ph.D. in Engineering",
+      "Ph.D. in Management",
+      "Ph.D. in Humanities",
+      "Ph.D. in Commerce",
+      "Ph.D. in Law",
+      "Ph.D. in Medical Sciences"
+    ],
+    "Specialized": [
+      "D.Sc (Doctor of Science)",
+      "D.Litt (Doctor of Letters)",
+      "LLD (Doctor of Laws)"
+    ]
+  }
+}
