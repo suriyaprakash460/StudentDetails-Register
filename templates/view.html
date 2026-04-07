@@ -1,0 +1,381 @@
+{% extends 'base.html' %}
+{% block title %}Students — StudentMS{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ──────────────────────────────────────── -->
+<div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
+    <div>
+        <h1 class="page-title"><i class="bi bi-people-fill me-2" style="color:var(--primary)"></i>Student Registry</h1>
+        <p class="page-subtitle">
+            Showing <strong id="resultCount">{{ total }}</strong> student{{ 's' if total != 1 else '' }}
+            {% if query %} matching "<em>{{ query }}</em>"{% endif %}
+        </p>
+    </div>
+    <a href="{{ url_for('add_student') }}" class="btn btn-primary">
+        <i class="bi bi-person-plus-fill me-1"></i>Add Student
+    </a>
+</div>
+
+<!-- ── Search Bar ────────────────────────────────────────── -->
+<div class="search-wrap mb-4">
+    <i class="bi bi-search search-icon"></i>
+    <input type="text"
+           id="searchInput"
+           class="form-control form-control-lg"
+           placeholder="Search by name or course…"
+           value="{{ query }}"
+           autocomplete="off">
+    <div class="search-spinner spinner-border spinner-border-sm text-primary" id="searchSpinner" role="status"></div>
+</div>
+
+<!-- ── Student Table ─────────────────────────────────────── -->
+<div class="table-responsive rounded-3 border" style="border-color:var(--border)!important">
+    <table class="table table-hover mb-0" id="studentTable">
+        <thead class="table-dark">
+            <tr>
+                <th scope="col" style="white-space:nowrap">ID</th>
+                <th scope="col">Name</th>
+                <th scope="col">Age</th>
+                <th scope="col" style="white-space:nowrap">DOB</th>
+                <th scope="col">Course</th>
+                <th scope="col">Address</th>
+                <th scope="col" style="white-space:nowrap">Adm. Date</th>
+                <th scope="col" class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="studentTbody">
+            {% for s in students %}
+            <tr id="row-{{ s[0] }}">
+                <td data-label="ID"><span class="badge" style="background:var(--primary-l);color:var(--primary);font-size:.82rem;font-weight:700">{{ s[0] }}</span></td>
+                <td data-label="Name" class="fw-600" style="font-weight:600">{{ s[1] }}</td>
+                <td data-label="Age">{{ s[2] }}</td>
+                <td data-label="DOB" class="small">{{ s[3].strftime('%d-%m-%Y') if s[3] else '-' }}</td>
+                <td data-label="Course"><span class="badge bg-light text-dark fw-500 border">{{ s[4] }}</span></td>
+                <td data-label="Address" class="small text-muted" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ s[5] }}">{{ s[5] }}</td>
+                <td data-label="Date" class="small">{{ s[6].strftime('%d-%m-%Y') if s[6] else '-' }}</td>
+                <td data-label="" class="actions-cell text-end">
+                    <a href="{{ url_for('edit_student', id=s[0]) }}"
+                       class="btn btn-sm btn-warning me-1"
+                       title="Edit">
+                       <i class="bi bi-pencil-fill"></i>
+                    </a>
+                    <button class="btn btn-sm btn-danger btn-delete"
+                            data-id="{{ s[0] }}"
+                            data-name="{{ s[1] }}"
+                            title="Delete">
+                        <i class="bi bi-trash3-fill"></i>
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr id="emptyRow">
+                <td colspan="8">
+                    <div class="empty-state">
+                        <i class="bi bi-inbox empty-icon"></i>
+                        <p class="fw-600 mb-1" style="font-weight:600">No students found</p>
+                        <p class="small text-muted mb-3">Try a different search or add a new student.</p>
+                        <a href="{{ url_for('add_student') }}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-person-plus-fill me-1"></i>Add Student
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ── Pagination (hidden when AJAX is active) ───────────── -->
+<div id="paginationWrap">
+{% if total_pages > 1 %}
+<nav class="mt-4 d-flex align-items-center justify-content-between flex-wrap gap-3" aria-label="pagination">
+    <small class="text-muted">
+        Page {{ page }} of {{ total_pages }} &bull; {{ total }} total
+    </small>
+    <ul class="pagination mb-0">
+        <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('view_students', page=page-1, q=query) }}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% for p in range(1, total_pages + 1) %}
+        <li class="page-item {% if p == page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('view_students', page=p, q=query) }}">{{ p }}</a>
+        </li>
+        {% endfor %}
+        <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('view_students', page=page+1, q=query) }}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+</div>
+
+
+<!-- ══ DELETE CONFIRMATION MODAL ════════════════════════════════════════════ -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden">
+            <div class="modal-header border-0 py-3"
+                 style="background:linear-gradient(135deg,#7f1d1d,#b91c1c);">
+                <h6 class="modal-title text-white fw-bold">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Deletion
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4 px-4">
+                <div style="width:64px;height:64px;background:#fee2e2;border-radius:50%;
+                            display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">
+                    <i class="bi bi-person-x-fill text-danger" style="font-size:1.8rem"></i>
+                </div>
+                <h6 class="fw-bold mb-1">Delete Student?</h6>
+                <p class="text-muted small mb-0">
+                    You are about to permanently delete
+                    <strong id="deleteStudentName" class="text-danger"></strong>.
+                    This action <strong>cannot be undone</strong> and all IDs
+                    will be resequenced.
+                </p>
+            </div>
+            <div class="modal-footer border-0 d-flex gap-2 justify-content-center pb-4">
+                <button class="btn btn-danger px-4 fw-bold" id="btnConfirmDelete" disabled>
+                    <span class="spinner-border spinner-border-sm d-none me-1" id="deleteSpinner"></span>
+                    <i class="bi bi-trash3-fill me-1" id="deleteIcon"></i>
+                    Delete Student
+                </button>
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+/**
+ * VIEW PAGE — JavaScript
+ * ─────────────────────────────────────────────────────────────────────────
+ * 1. AJAX Live Search  — debounced keyup → fetch /api/search → re-render table
+ * 2. Delete Modal      — custom Bootstrap modal (not browser confirm)
+ * 3. AJAX Delete       — fetch POST /delete/<id> → fade-remove row, no reload
+ */
+
+/* ══ 1. AJAX LIVE SEARCH ══════════════════════════════════════════════════ */
+(function () {
+    const input     = document.getElementById('searchInput');
+    const tbody     = document.getElementById('studentTbody');
+    const countEl   = document.getElementById('resultCount');
+    const spinner   = document.getElementById('searchSpinner');
+    const pagination= document.getElementById('paginationWrap');
+
+    let debounceTimer = null;
+
+    /**
+     * Build a table row HTML string from a student JSON object.
+     * Mirrors the Jinja2 table row structure exactly.
+     */
+    function buildRow(s) {
+        // Format date from YYYY-MM-DD to DD-MM-YYYY for display
+        const fmt = d => {
+            if (!d) return '-';
+            const p = d.split('-');
+            return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : d;
+        };
+
+        return `
+        <tr id="row-${s.id}">
+            <td data-label="ID">
+                <span class="badge" style="background:var(--primary-l);color:var(--primary);font-size:.82rem;font-weight:700">${s.id}</span>
+            </td>
+            <td data-label="Name" style="font-weight:600">${escHtml(s.name)}</td>
+            <td data-label="Age">${s.age}</td>
+            <td data-label="DOB" class="small">${fmt(s.dob)}</td>
+            <td data-label="Course">
+                <span class="badge bg-light text-dark border">${escHtml(s.course)}</span>
+            </td>
+            <td data-label="Address" class="small text-muted" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escHtml(s.address)}">${escHtml(s.address)}</td>
+            <td data-label="Date" class="small">${fmt(s.admission_date)}</td>
+            <td data-label="" class="actions-cell text-end">
+                <a href="/edit/${s.id}" class="btn btn-sm btn-warning me-1" title="Edit">
+                    <i class="bi bi-pencil-fill"></i>
+                </a>
+                <button class="btn btn-sm btn-danger btn-delete"
+                        data-id="${s.id}" data-name="${escHtml(s.name)}" title="Delete">
+                    <i class="bi bi-trash3-fill"></i>
+                </button>
+            </td>
+        </tr>`;
+    }
+
+    /** Build the empty-state row when no results found */
+    function emptyRow(query) {
+        return `
+        <tr id="emptyRow">
+            <td colspan="8">
+                <div class="empty-state">
+                    <i class="bi bi-search empty-icon"></i>
+                    <p style="font-weight:600" class="mb-1">No results for "${escHtml(query)}"</p>
+                    <p class="small text-muted">Try a different name or course.</p>
+                </div>
+            </td>
+        </tr>`;
+    }
+
+    /** Simple HTML-escape to prevent XSS in dynamically built rows */
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    /**
+     * Fetch students from the AJAX API and re-render the table.
+     * Hides pagination while AJAX search is active (has a value).
+     */
+    function doSearch(q) {
+        spinner.style.display = 'block';
+        pagination.style.display = q ? 'none' : '';   // hide pagination during search
+
+        fetch(`/api/search?q=${encodeURIComponent(q)}`, { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(data => {
+                spinner.style.display = 'none';
+                countEl.textContent   = data.total;
+
+                if (data.students.length === 0) {
+                    tbody.innerHTML = emptyRow(q);
+                } else {
+                    tbody.innerHTML = data.students.map(buildRow).join('');
+                }
+                // Re-attach delete listeners to the newly injected buttons
+                attachDeleteListeners();
+            })
+            .catch(() => {
+                spinner.style.display = 'none';
+            });
+    }
+
+    // Debounce: wait 320ms after last keystroke before fetching
+    if (input) {
+        input.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            const q = this.value.trim();
+            debounceTimer = setTimeout(() => doSearch(q), 320);
+        });
+    }
+
+    // ── expose for delete handler to call after row removal ──
+    window._doSearch = function () {
+        if (input) doSearch(input.value.trim());
+    };
+})();
+
+
+/* ══ 2 & 3. DELETE MODAL + AJAX DELETE ═══════════════════════════════════ */
+(function () {
+    const modal      = new bootstrap.Modal(document.getElementById('deleteModal'));
+    const nameEl     = document.getElementById('deleteStudentName');
+    const confirmBtn = document.getElementById('btnConfirmDelete');
+    const spinner    = document.getElementById('deleteSpinner');
+    const icon       = document.getElementById('deleteIcon');
+
+    let targetId   = null;
+    let targetName = null;
+
+    /**
+     * Attach click listeners to every .btn-delete button in the table.
+     * Must be called again after AJAX re-renders the table rows.
+     */
+    function attachDeleteListeners() {
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', function () {
+                targetId   = this.dataset.id;
+                targetName = this.dataset.name;
+
+                // Populate modal and open it
+                nameEl.textContent  = targetName;
+                confirmBtn.disabled = false;
+                icon.className      = 'bi bi-trash3-fill me-1';
+                spinner.classList.add('d-none');
+                modal.show();
+            });
+        });
+    }
+
+    // Initial attachment (server-rendered rows)
+    attachDeleteListeners();
+
+    // Expose so AJAX search can re-attach after re-render
+    window.attachDeleteListeners = attachDeleteListeners;
+
+    /**
+     * Confirm Delete click — send AJAX POST request.
+     * On success: fade out and remove the row from the DOM.
+     * On failure: show inline error without page reload.
+     */
+    confirmBtn.addEventListener('click', function () {
+        if (!targetId) return;
+
+        // Show loading state
+        this.disabled = true;
+        spinner.classList.remove('d-none');
+        icon.className = '';
+
+        fetch(`/delete/${targetId}`, {
+            method:  'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        })
+        .then(r => r.json())
+        .then(data => {
+            modal.hide();
+            if (data.success) {
+                // Animate row out, then remove it
+                const row = document.getElementById(`row-${targetId}`);
+                if (row) {
+                    row.style.transition = 'opacity .4s, transform .4s';
+                    row.style.opacity    = '0';
+                    row.style.transform  = 'translateX(20px)';
+                    setTimeout(() => {
+                        row.remove();
+                        // Refresh via AJAX to get updated sequential IDs
+                        window._doSearch && window._doSearch();
+
+                        // Show a temporary success toast
+                        showToast(`🗑️ "${targetName}" deleted and IDs reordered.`, 'success');
+                    }, 400);
+                }
+            } else {
+                showToast('Deletion failed: ' + (data.message || 'Unknown error'), 'danger');
+            }
+        })
+        .catch(() => {
+            modal.hide();
+            showToast('Network error. Please try again.', 'danger');
+        });
+    });
+
+    /**
+     * Show a dismissible Bootstrap-style toast alert at the top of the page.
+     * Used as feedback for AJAX operations that don't cause a page reload.
+     */
+    function showToast(message, type) {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert"
+                 style="animation:fadeSlide .3s ease;border:none;border-radius:10px;font-weight:500">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+        const flashZone = document.querySelector('.flash-zone');
+        if (flashZone) {
+            flashZone.prepend(wrapper.firstElementChild);
+        }
+    }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% block title %}Login — StudentMS{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Override base card padding for auth pages */
+    .content-card { padding: 0; overflow: hidden; }
+
+    .auth-split {
+        display: flex;
+        min-height: 480px;
+    }
+
+    /* Left branding panel */
+    .auth-brand {
+        flex: 0 0 42%;
+        background: linear-gradient(145deg, #1e1b4b 0%, #3730a3 60%, #4f46e5 100%);
+        padding: 3rem 2.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+    }
+    .auth-brand::before {
+        content: '';
+        position: absolute;
+        width: 300px; height: 300px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.05);
+        bottom: -80px; right: -80px;
+    }
+    .auth-brand::after {
+        content: '';
+        position: absolute;
+        width: 180px; height: 180px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.06);
+        top: -40px; right: 40px;
+    }
+    .brand-logo {
+        font-size: 2.8rem;
+        margin-bottom: 1rem;
+        position: relative; z-index: 1;
+    }
+    .brand-title {
+        font-size: 1.6rem; font-weight: 800; margin-bottom: .5rem;
+        position: relative; z-index: 1;
+    }
+    .brand-tagline {
+        font-size: .9rem; color: #c7d2fe; line-height: 1.6;
+        position: relative; z-index: 1;
+    }
+    .brand-features {
+        list-style: none; padding: 0; margin-top: 2rem;
+        position: relative; z-index: 1;
+    }
+    .brand-features li {
+        font-size: .83rem; color: #a5b4fc;
+        margin-bottom: .5rem;
+        display: flex; align-items: center; gap: .5rem;
+    }
+    .brand-features li i { color: #818cf8; }
+
+    /* Right form panel */
+    .auth-form-panel {
+        flex: 1;
+        padding: 3rem 2.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .auth-heading {
+        font-size: 1.4rem; font-weight: 800;
+        color: var(--text); margin-bottom: .3rem;
+    }
+    .auth-sub { font-size: .875rem; color: var(--muted); margin-bottom: 2rem; }
+
+    .input-icon-wrap { position: relative; }
+    .input-icon-wrap .field-icon {
+        position: absolute; left: 14px; top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted); font-size: .95rem; pointer-events: none;
+    }
+    .input-icon-wrap input { padding-left: 2.6rem; }
+
+    /* Password toggle */
+    .toggle-pw {
+        position: absolute; right: 12px; top: 50%;
+        transform: translateY(-50%);
+        background: none; border: none; color: var(--muted);
+        cursor: pointer; font-size: .9rem;
+        padding: 4px;
+    }
+    .toggle-pw:hover { color: var(--primary); }
+
+    @media (max-width: 640px) {
+        .auth-brand { display: none; }
+        .auth-form-panel { padding: 2rem 1.5rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-split">
+
+    <!-- ── Left Panel: Branding ── -->
+    <div class="auth-brand">
+        <div class="brand-logo">🎓</div>
+        <div class="brand-title">StudentMS</div>
+        <p class="brand-tagline">
+            A production-ready student management platform.
+            Manage enrolments, search records and track your class with ease.
+        </p>
+        <ul class="brand-features">
+            <li><i class="bi bi-shield-lock-fill"></i> Secure hashed passwords</li>
+            <li><i class="bi bi-search"></i> Real-time AJAX search</li>
+            <li><i class="bi bi-clock-history"></i> Auto session timeout</li>
+            <li><i class="bi bi-phone"></i> Mobile-responsive UI</li>
+        </ul>
+    </div>
+
+    <!-- ── Right Panel: Form ── -->
+    <div class="auth-form-panel">
+        <h1 class="auth-heading">Welcome back</h1>
+        <p class="auth-sub">Sign in to your admin account to continue.</p>
+
+        <form action="{{ url_for('login') }}" method="POST" novalidate>
+
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <div class="input-icon-wrap">
+                    <i class="bi bi-person-fill field-icon"></i>
+                    <input type="text"
+                           class="form-control"
+                           id="username"
+                           name="username"
+                           placeholder="Enter your username"
+                           autocomplete="username"
+                           required autofocus>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="password" class="form-label">Password</label>
+                <div class="input-icon-wrap">
+                    <i class="bi bi-lock-fill field-icon"></i>
+                    <input type="password"
+                           class="form-control"
+                           id="password"
+                           name="password"
+                           placeholder="Enter your password"
+                           autocomplete="current-password"
+                           required>
+                    <button type="button" class="toggle-pw" id="togglePw" tabindex="-1"
+                            title="Show/hide password">
+                        <i class="bi bi-eye" id="pwIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="d-grid mb-3">
+                <button type="submit" class="btn btn-primary btn-lg fw-bold">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Sign In
+                </button>
+            </div>
+
+        </form>
+
+        <p class="text-center text-muted small mb-0">
+            Don't have an account?
+            <a href="{{ url_for('register') }}" class="fw-600" style="font-weight:600;color:var(--primary)">
+                Create one
+            </a>
+        </p>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    /* Password show/hide toggle */
+    const toggleBtn = document.getElementById('togglePw');
+    const pwInput   = document.getElementById('password');
+    const pwIcon    = document.getElementById('pwIcon');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function () {
+            const isText   = pwInput.type === 'text';
+            pwInput.type   = isText ? 'password' : 'text';
+            pwIcon.className = isText ? 'bi bi-eye' : 'bi bi-eye-slash';
+        });
+    }
+</script>
+{% endblock %}

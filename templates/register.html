@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% block title %}Create Account — StudentMS{% endblock %}
+
+{% block extra_head %}
+<style>
+    .content-card { padding: 0; overflow: hidden; }
+    .auth-split { display: flex; min-height: 460px; }
+    .auth-brand {
+        flex: 0 0 40%;
+        background: linear-gradient(145deg, #064e3b 0%, #065f46 60%, #059669 100%);
+        padding: 3rem 2.5rem;
+        display: flex; flex-direction: column; justify-content: center;
+        color: #fff; position: relative; overflow: hidden;
+    }
+    .auth-brand::before {
+        content: ''; position: absolute; width: 260px; height: 260px;
+        border-radius: 50%; background: rgba(255,255,255,.06);
+        bottom: -60px; right: -60px;
+    }
+    .auth-brand::after {
+        content: ''; position: absolute; width: 140px; height: 140px;
+        border-radius: 50%; background: rgba(255,255,255,.07);
+        top: -30px; right: 30px;
+    }
+    .brand-logo { font-size: 2.8rem; margin-bottom: 1rem; position: relative; z-index:1; }
+    .brand-title { font-size: 1.5rem; font-weight: 800; margin-bottom: .5rem; position: relative; z-index:1; }
+    .brand-tagline { font-size: .88rem; color: #a7f3d0; line-height: 1.6; position: relative; z-index:1; }
+    .brand-steps { list-style: none; padding: 0; margin-top: 2rem; position: relative; z-index:1; }
+    .brand-steps li { font-size: .82rem; color: #6ee7b7; margin-bottom: .5rem; display: flex; align-items: center; gap: .5rem; }
+    .auth-form-panel { flex: 1; padding: 3rem 2.5rem; display: flex; flex-direction: column; justify-content: center; }
+    .auth-heading { font-size: 1.4rem; font-weight: 800; color: var(--text); margin-bottom: .3rem; }
+    .auth-sub { font-size: .875rem; color: var(--muted); margin-bottom: 2rem; }
+    .input-icon-wrap { position: relative; }
+    .input-icon-wrap .field-icon {
+        position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+        color: var(--muted); font-size: .95rem; pointer-events: none;
+    }
+    .input-icon-wrap input { padding-left: 2.6rem; }
+    .pw-strength { height: 4px; border-radius: 2px; margin-top: 6px; transition: width .3s, background .3s; width: 0; }
+    .strength-label { font-size: .72rem; color: var(--muted); margin-top: 3px; }
+    @media (max-width: 640px) {
+        .auth-brand { display: none; }
+        .auth-form-panel { padding: 2rem 1.5rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-split">
+
+    <!-- ── Left Branding Panel ── -->
+    <div class="auth-brand">
+        <div class="brand-logo">✨</div>
+        <div class="brand-title">Join StudentMS</div>
+        <p class="brand-tagline">Create your admin account and start managing student records in minutes.</p>
+        <ul class="brand-steps">
+            <li><i class="bi bi-1-circle-fill"></i> Enter a username (min. 3 chars)</li>
+            <li><i class="bi bi-2-circle-fill"></i> Choose a secure password (min. 6 chars)</li>
+            <li><i class="bi bi-3-circle-fill"></i> Log in and manage students!</li>
+        </ul>
+    </div>
+
+    <!-- ── Right Form Panel ── -->
+    <div class="auth-form-panel">
+        <h1 class="auth-heading">Create your account</h1>
+        <p class="auth-sub">Fill in the details below to get started.</p>
+
+        <form action="{{ url_for('register') }}" method="POST" novalidate id="registerForm">
+
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <div class="input-icon-wrap">
+                    <i class="bi bi-person-fill field-icon"></i>
+                    <input type="text"
+                           class="form-control"
+                           id="username"
+                           name="username"
+                           placeholder="Choose a username (min 3 chars)"
+                           value="{{ username | default('') }}"
+                           autocomplete="username"
+                           minlength="3"
+                           required autofocus>
+                </div>
+            </div>
+
+            <div class="mb-1">
+                <label for="password" class="form-label">Password</label>
+                <div class="input-icon-wrap">
+                    <i class="bi bi-lock-fill field-icon"></i>
+                    <input type="password"
+                           class="form-control"
+                           id="password"
+                           name="password"
+                           placeholder="Minimum 6 characters"
+                           autocomplete="new-password"
+                           minlength="6"
+                           required>
+                </div>
+            </div>
+            <!-- Password strength bar -->
+            <div class="pw-strength bg-secondary" id="pwStrengthBar"></div>
+            <div class="strength-label mb-3" id="pwStrengthLabel"></div>
+
+            <div class="d-grid mt-3 mb-3">
+                <button type="submit" class="btn btn-success btn-lg fw-bold">
+                    <i class="bi bi-person-check-fill me-1"></i>Create Account
+                </button>
+            </div>
+
+        </form>
+
+        <p class="text-center text-muted small mb-0">
+            Already have an account?
+            <a href="{{ url_for('login') }}" style="font-weight:600;color:var(--primary)">Sign in</a>
+        </p>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+/* Password strength indicator */
+const pwInput   = document.getElementById('password');
+const bar       = document.getElementById('pwStrengthBar');
+const label     = document.getElementById('pwStrengthLabel');
+
+if (pwInput) {
+    pwInput.addEventListener('input', function () {
+        const v = this.value;
+        let score = 0;
+        if (v.length >= 6)  score++;
+        if (v.length >= 10) score++;
+        if (/[A-Z]/.test(v)) score++;
+        if (/[0-9]/.test(v)) score++;
+        if (/[^A-Za-z0-9]/.test(v)) score++;
+
+        const levels = [
+            { w: '15%',  bg: '#ef4444', text: 'Very weak'  },
+            { w: '35%',  bg: '#f97316', text: 'Weak'        },
+            { w: '55%',  bg: '#eab308', text: 'Fair'        },
+            { w: '75%',  bg: '#22c55e', text: 'Good'        },
+            { w: '100%', bg: '#16a34a', text: 'Strong 💪'   },
+        ];
+        const lvl = levels[Math.min(score, 4)];
+        bar.style.width      = v.length ? lvl.w  : '0';
+        bar.style.background = lvl.bg;
+        label.textContent    = v.length ? lvl.text : '';
+        label.style.color    = lvl.bg;
+    });
+}
+</script>
+{% endblock %}
