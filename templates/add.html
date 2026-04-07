@@ -31,60 +31,41 @@
                 <div class="form-text">Enter the student's full name.</div>
             </div>
 
-            <!-- Age -->
-            <div class="mb-4">
-                <label for="age" class="form-label">
-                    Age <span class="text-danger">*</span>
-                </label>
-                <div style="position:relative">
-                    <i class="bi bi-calendar3" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)"></i>
-                    <select class="form-select"
-                            id="age"
-                            name="age"
-                            style="padding-left:2.6rem"
-                            required>
-                        <option value="" disabled selected>Select Age</option>
-                    </select>
+            <!-- DOB and Age (Row) -->
+            <div class="row mb-4">
+                <!-- Date of Birth (Calendar) -->
+                <div class="col-md-8">
+                    <label for="dob" class="form-label">
+                        Date of Birth <span class="text-danger">*</span>
+                    </label>
+                    <div style="position:relative">
+                        <i class="bi bi-calendar-check" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)"></i>
+                        <input type="date"
+                               class="form-control"
+                               id="dob"
+                               name="dob"
+                               value="{{ dob | default('') }}"
+                               style="padding-left:2.6rem"
+                               required>
+                    </div>
                 </div>
-                <div class="form-text">Must be a number between 1 and 120.</div>
-            </div>
 
-            <!-- Date of Birth (Date Month Year Alignment) -->
-            <div class="mb-4">
-                <label class="form-label">
-                    Date of Birth <span class="text-danger">*</span>
-                </label>
-                <div class="row gx-2">
-                    <div class="col-4">
-                        <select id="dob_day" class="form-select custom-select" required>
-                            <option value="" disabled selected>Day</option>
-                        </select>
-                    </div>
-                    <div class="col-4">
-                        <select id="dob_month" class="form-select custom-select" required>
-                            <option value="" disabled selected>Month</option>
-                            <option value="01">Jan</option>
-                            <option value="02">Feb</option>
-                            <option value="03">Mar</option>
-                            <option value="04">Apr</option>
-                            <option value="05">May</option>
-                            <option value="06">Jun</option>
-                            <option value="07">Jul</option>
-                            <option value="08">Aug</option>
-                            <option value="09">Sep</option>
-                            <option value="10">Oct</option>
-                            <option value="11">Nov</option>
-                            <option value="12">Dec</option>
-                        </select>
-                    </div>
-                    <div class="col-4">
-                        <select id="dob_year" class="form-select custom-select" required>
-                            <option value="" disabled selected>Year</option>
-                        </select>
+                <!-- Age (Auto-calculated) -->
+                <div class="col-md-4">
+                    <label for="age_display" class="form-label">
+                        Age <span class="text-secondary">(Auto)</span>
+                    </label>
+                    <div style="position:relative">
+                        <i class="bi bi-clock-history" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)"></i>
+                        <input type="text"
+                               class="form-control bg-light"
+                               id="age_display"
+                               readonly
+                               placeholder="Years"
+                               style="padding-left:2.6rem">
+                        <input type="hidden" name="age" id="age_hidden">
                     </div>
                 </div>
-                <input type="hidden" name="dob" id="dob_hidden" value="{{ dob | default('') }}">
-                <div class="form-text">Select student's date of birth.</div>
             </div>
 
             <!-- Course Selection (Multi-level) -->
@@ -164,42 +145,21 @@
                 <div class="form-text mt-2" id="combinedAddressPreview">Preview: (Select details above)</div>
             </div>
 
-            <!-- Admission Date (Date Month Year Alignment) -->
+            <!-- Admission Date (Automatic) -->
             <div class="mb-4">
-                <label class="form-label">
-                    Admission Date <span class="text-danger">*</span>
+                <label for="admission_date" class="form-label">
+                    Admission Date <span class="text-secondary">(System Auto-set)</span>
                 </label>
-                <div class="row gx-2">
-                    <div class="col-4">
-                        <select id="adm_day" class="form-select custom-select" required>
-                            <option value="" disabled selected>Day</option>
-                        </select>
-                    </div>
-                    <div class="col-4">
-                        <select id="adm_month" class="form-select custom-select" required>
-                            <option value="" disabled selected>Month</option>
-                            <option value="01">Jan</option>
-                            <option value="02">Feb</option>
-                            <option value="03">Mar</option>
-                            <option value="04">Apr</option>
-                            <option value="05">May</option>
-                            <option value="06">Jun</option>
-                            <option value="07">Jul</option>
-                            <option value="08">Aug</option>
-                            <option value="09">Sep</option>
-                            <option value="10">Oct</option>
-                            <option value="11">Nov</option>
-                            <option value="12">Dec</option>
-                        </select>
-                    </div>
-                    <div class="col-4">
-                        <select id="adm_year" class="form-select custom-select" required>
-                            <option value="" disabled selected>Year</option>
-                        </select>
-                    </div>
+                <div style="position:relative">
+                    <i class="bi bi-calendar-event" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)"></i>
+                    <input type="date"
+                           class="form-control bg-light"
+                           id="admission_date"
+                           name="admission_date"
+                           readonly
+                           style="padding-left:2.6rem">
                 </div>
-                <input type="hidden" name="admission_date" id="adm_hidden" value="{{ admission_date | default('') }}">
-                <div class="form-text">Select the date of enrollment.</div>
+                <div class="form-text">The enrollment date is automatically set to today.</div>
             </div>
 
             <!-- Actions -->
@@ -242,7 +202,13 @@ const el = {
     cField: document.getElementById('course_field'),
     cName: document.getElementById('course_name_select'),
     cHidden: document.getElementById('course_hidden'),
-    cPreview: document.getElementById('coursePreview')
+    cPreview: document.getElementById('coursePreview'),
+
+    // Automated Date/Age elements
+    dob: document.getElementById('dob'),
+    ageDisp: document.getElementById('age_display'),
+    ageHidden: document.getElementById('age_hidden'),
+    admDate: document.getElementById('admission_date')
 };
 
 let COURSE_DATA = {};
@@ -261,18 +227,48 @@ async function initGeodata() {
         const states = Object.keys(GEODATA).sort();
         states.forEach(s => el.state.add(new Option(s, s)));
 
-        // Populate Course Levels
+        // Initialize Course Levels
         const levels = Object.keys(COURSE_DATA);
         levels.forEach(l => el.cLevel.add(new Option(l, l)));
 
-        // Initialize Date Selectors
-        setupDatePickers();
-        
-        // Initialize Age Selector
-        setupAgePicker();
+        // Initialize Automated Fields (Age/Admission)
+        initAutomatedFields();
     } catch (e) {
         console.error("Failed to load data", e);
     }
+}
+
+/** 1.1 AUTOMATED FIELDS (AGE & ADMISSION) **/
+function initAutomatedFields() {
+    // 1. Set Admission Date to Today
+    const today = new Date().toISOString().split('T')[0];
+    el.admDate.value = today;
+
+    // 2. Age calculation listener
+    el.dob.addEventListener('change', calculateAge);
+    
+    // Initial calculation if DOB exists (from server re-render)
+    if (el.dob.value) calculateAge();
+}
+
+function calculateAge() {
+    const dobValue = el.dob.value;
+    if (!dobValue) return;
+
+    const birthDate = new Date(dobValue);
+    const today = new Date();
+    
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+
+    if (age < 0) age = 0;
+    
+    el.ageDisp.value = `${age} Years`;
+    el.ageHidden.value = age;
 }
 
 /** 1.1 DATE SELECTOR SETUP (D-M-Y ALIGNMENT) **/

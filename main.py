@@ -142,7 +142,7 @@ def login_required(f):
 @app.route("/")
 def index():
     """Render the public landing / home page."""
-    return render_template("index.html")
+    return render_template("index.html", bg_class="home-view")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -166,7 +166,7 @@ def login():
         # Basic presence check
         if not username or not password:
             flash("Both fields are required.", "warning")
-            return render_template("login.html")
+            return render_template("login.html", bg_class="auth-view")
 
         try:
             user = db_execute(
@@ -176,7 +176,7 @@ def login():
         except Exception as e:
             app.logger.error(f"[LOGIN] DB error: {e}")
             flash("A server error occurred. Please try again.", "danger")
-            return render_template("login.html")
+            return render_template("login.html", bg_class="auth-view")
 
         # Verify hashed password — avoid timing attacks by always calling check_password_hash
         if user and check_password_hash(user[2], password):
@@ -190,7 +190,7 @@ def login():
         else:
             flash("Invalid username or password.", "danger")
 
-    return render_template("login.html")
+    return render_template("login.html", bg_class="auth-view")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -223,7 +223,7 @@ def register():
         if errors:
             for err in errors:
                 flash(err, "danger")
-            return render_template("register.html", username=username)
+            return render_template("register.html", username=username, bg_class="auth-view")
 
         try:
             # Check for existing username (unique constraint)
@@ -232,7 +232,7 @@ def register():
             )
             if existing:
                 flash("That username is already taken. Please choose another.", "warning")
-                return render_template("register.html", username=username)
+                return render_template("register.html", username=username, bg_class="auth-view")
 
             # Hash then store — never store raw password
             hashed_pw = generate_password_hash(password)
@@ -247,7 +247,7 @@ def register():
             app.logger.error(f"[REGISTER] DB error: {e}")
             flash("Registration failed due to a server error. Please try again.", "danger")
 
-    return render_template("register.html")
+    return render_template("register.html", bg_class="auth-view")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -301,7 +301,7 @@ def add_student():
         if errors:
             for err in errors:
                 flash(err, "danger")
-            return render_template("add.html", name=name, age=age, dob=dob, course=course, address=address, admission_date=adm_date)
+            return render_template("add.html", name=name, age=age, dob=dob, course=course, address=address, admission_date=adm_date, bg_class="add-view")
 
         try:
             # ── FIND SMALLEST MISSING ID ─────────────────────────────────────
@@ -326,11 +326,10 @@ def add_student():
             return redirect(url_for('view_students'))
 
         except Exception as e:
-            app.logger.error(f"[ADD_STUDENT] DB error: {e}")
             flash("Failed to add student. Please try again.", "danger")
-            return render_template("add.html", name=name, age=age, dob=dob, course=course, address=address, admission_date=adm_date)
+            return render_template("add.html", name=name, age=age, dob=dob, course=course, address=address, admission_date=adm_date, bg_class="add-view")
 
-    return render_template("add.html")
+    return render_template("add.html", bg_class="add-view")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -366,14 +365,14 @@ def view_students():
             students = db_execute(
                 """SELECT id, name, age, dob, course, address, admission_date FROM students
                    WHERE name LIKE %s OR course LIKE %s OR address LIKE %s
-                   ORDER BY id ASC LIMIT %s OFFSET %s""",
+                   ORDER BY name ASC LIMIT %s OFFSET %s""",
                 (like, like, like, PER_PAGE, offset), fetch='all'
             ) or []
         else:
             total_row = db_execute("SELECT COUNT(*) FROM students", fetch='one')
             total     = total_row[0] if total_row else 0
             students  = db_execute(
-                "SELECT id, name, age, dob, course, address, admission_date FROM students ORDER BY id ASC LIMIT %s OFFSET %s",
+                "SELECT id, name, age, dob, course, address, admission_date FROM students ORDER BY name ASC LIMIT %s OFFSET %s",
                 (PER_PAGE, offset), fetch='all'
             ) or []
 
@@ -392,7 +391,8 @@ def view_students():
         total_pages=total_pages,
         total=total,
         per_page=PER_PAGE,
-        session_timeout=SESSION_TIMEOUT_MINUTES
+        session_timeout=SESSION_TIMEOUT_MINUTES,
+        bg_class="list-view"
     )
 
 
@@ -420,12 +420,12 @@ def api_search():
             rows = db_execute(
                 """SELECT id, name, age, dob, course, address, admission_date FROM students
                    WHERE name LIKE %s OR course LIKE %s OR address LIKE %s
-                   ORDER BY id ASC LIMIT 100""",
+                   ORDER BY name ASC LIMIT 100""",
                 (like, like, like), fetch='all'
             ) or []
         else:
             rows = db_execute(
-                "SELECT id, name, age, dob, course, address, admission_date FROM students ORDER BY id ASC LIMIT 100",
+                "SELECT id, name, age, dob, course, address, admission_date FROM students ORDER BY name ASC LIMIT 100",
                 fetch='all'
             ) or []
 
@@ -533,7 +533,7 @@ def edit_student(id):
             for err in errors:
                 flash(err, "danger")
             # Preserve user's current input on re-render
-            return render_template("edit.html", student=(id, name, age, dob, course, address, adm_date))
+            return render_template("edit.html", student=(id, name, age, dob, course, address, adm_date), bg_class="add-view")
 
         try:
             db_execute(
@@ -545,9 +545,9 @@ def edit_student(id):
         except Exception as e:
             app.logger.error(f"[EDIT_STUDENT] Update error: {e}")
             flash("Update failed. Please try again.", "danger")
-            return render_template("edit.html", student=(id, name, age, dob, course, address, adm_date))
+            return render_template("edit.html", student=(id, name, age, dob, course, address, adm_date), bg_class="add-view")
 
-    return render_template("edit.html", student=student)
+    return render_template("edit.html", student=student, bg_class="add-view")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
