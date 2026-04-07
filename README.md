@@ -41,9 +41,10 @@ Designed for scalability and administrative excellence using **Flask**, **MySQL*
 
 ### 🔍 Search & UI Excellence
 - **AJAX Live Filter**: Search through thousands of records instantly by Name, Course, or ID without a page refresh.
-- **Alphabetical Name Sorting**: Student records are now automatically ordered by name (A-Z) for easier browsing.
-- **Automated Age Calculation**: Age is instantly calculated from the **Date of Birth** calendar selection.
-- **Glassmorphism & Academic Backdrop**: Premium, high-quality student-themed background with soft blur and glass UI effects.
+- **Automated Age Calculation**: Age is instantly calculated from the **Date of Birth** calendar selection, ensuring data accuracy.
+- **Calendar-Based Input**: Modern, native calendar pickers for **Date of Birth** and **Admission Date** (System Auto-set).
+- **Live Camera Capture**: Take student photos directly from the web browser's webcam.
+- **Premium UX Design**: Fluid transitions, hover effects, and a mobile-first responsive layout powered by **Bootstrap 5**.
 
 ### 🔐 Security & Architecture
 - **Auth Guard**: Password hashing with **PBKDF2** and secure session handling.
@@ -131,5 +132,5 @@ python main.py
 
 ## 📝 License & Attribution
 Designed and Developed with ❤️ by **[Suriyaprakash S](https://github.com/suriyaprakash460)**  
-🚀 *Empowering Academic Excellence through Technology*  
+*Built for educational and administrative excellence.*  
 &copy; 2024 **StudentMS** — A Suriyaprakash Venture

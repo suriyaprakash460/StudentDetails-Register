@@ -10,7 +10,42 @@
 
 <div class="row justify-content-center">
     <div class="col-lg-7">
-        <form action="{{ url_for('add_student') }}" method="POST" novalidate id="addForm">
+        <form action="{{ url_for('add_student') }}" 
+              method="POST" 
+              enctype="multipart/form-data"
+              class="needs-validation" 
+              id="studentForm" 
+              novalidate>
+
+            <!-- Photo Upload -->
+            <div class="mb-4 text-center">
+                <div class="mb-3">
+                    <label for="photo" class="form-label d-block text-center">Student Photo</label>
+                    <div class="position-relative d-inline-block shadow-lg rounded-circle" style="padding: 5px; background: white;">
+                        <img id="photo_preview" 
+                             src="{{ url_for('static', filename='uploads/default_profile.png') }}" 
+                             alt="Student Preview" 
+                             class="rounded-circle border" 
+                             style="width:120px; height:120px; object-fit:cover;">
+                        <label for="photo" 
+                               class="btn btn-sm btn-primary rounded-circle position-absolute" 
+                               style="bottom:0; right:0; padding:.2rem .4rem;"
+                               title="Upload Photo">
+                            <i class="bi bi-upload"></i>
+                            <input type="file" id="photo" name="photo" class="d-none" accept="image/*" onchange="previewImage(this)">
+                        </label>
+                        <button type="button" 
+                                class="btn btn-sm btn-success rounded-circle position-absolute" 
+                                style="bottom:0; left:0; padding:.2rem .4rem;"
+                                title="Live Camera"
+                                data-bs-toggle="modal"
+                                data-bs-target="#cameraModal">
+                            <i class="bi bi-camera-fill"></i>
+                        </button>
+                    </div>
+                    <div class="mt-2 small text-muted">Click the camera icon to take a live photo or upload icon to select a file.</div>
+                </div>
+            </div>
 
             <!-- Name -->
             <div class="mb-4">
@@ -210,6 +245,62 @@ const el = {
     ageHidden: document.getElementById('age_hidden'),
     admDate: document.getElementById('admission_date')
 };
+
+/** 0.A PHOTO PREVIEW & CAMERA HANDLER **/
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('photo_preview').src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+/** 0.B LIVE CAMERA HANDLER **/
+let camStream = null;
+const cameraModalEl = document.getElementById('cameraModal');
+const video = document.getElementById('webcamVideo');
+const canvas = document.getElementById('captureCanvas');
+
+cameraModalEl.addEventListener('shown.bs.modal', async () => {
+    try {
+        camStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = camStream;
+    } catch (err) {
+        alert("Unable to access camera: " + err.message);
+    }
+});
+
+cameraModalEl.addEventListener('hidden.bs.modal', () => {
+    if (camStream) {
+        camStream.getTracks().forEach(track => track.stop());
+        camStream = null;
+    }
+});
+
+function capturePhoto() {
+    const context = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Convert to Blob and set as File input
+    canvas.toBlob(blob => {
+        const file = new File([blob], "captured_student.png", { type: "image/png" });
+        const container = new DataTransfer();
+        container.items.add(file);
+        document.getElementById('photo').files = container.files;
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = (e) => document.getElementById('photo_preview').src = e.target.result;
+        reader.readAsDataURL(file);
+        
+        // Close modal
+        bootstrap.Modal.getInstance(cameraModalEl).hide();
+    }, 'image/png');
+}
 
 let COURSE_DATA = {};
 
@@ -563,4 +654,26 @@ document.getElementById('addForm').addEventListener('submit', function (e) {
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Enrolling…';
 });
 </script>
+
+<!-- ══ LIVE CAMERA MODAL ═════════════════════════════════════════════════ -->
+<div class="modal fade" id="cameraModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h6 class="modal-title fw-bold"><i class="bi bi-camera-fill me-2"></i>Live Capture</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center bg-black p-0 overflow-hidden" style="min-height: 300px;">
+                <video id="webcamVideo" autoplay muted playsinline style="width:100%; height:auto;"></video>
+                <canvas id="captureCanvas" class="d-none"></canvas>
+            </div>
+            <div class="modal-footer border-0 d-flex justify-content-center pb-4">
+                <button class="btn btn-success px-4 fw-bold" onclick="capturePhoto()">
+                    <i class="bi bi-record-circle me-1"></i>Capture Now
+                </button>
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

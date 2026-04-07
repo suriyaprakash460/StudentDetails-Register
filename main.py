@@ -17,8 +17,11 @@ from flask import (
 )
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 import mysql.connector
+import os
+import uuid
 
 app = Flask(__name__)
 app.secret_key = "sms_super_secret_2024"
@@ -26,6 +29,14 @@ app.secret_key = "sms_super_secret_2024"
 # ── Global config ──────────────────────────────────────────────────────────────
 SESSION_TIMEOUT_MINUTES = 30   # inactivity window before auto-logout
 PER_PAGE                = 100000000  # show all students on one page (effectively no pagination)
+
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -142,7 +153,7 @@ def login_required(f):
 @app.route("/")
 def index():
     """Render the public landing / home page."""
-    return render_template("index.html", bg_class="home-view")
+    return render_template("index.html")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -166,7 +177,7 @@ def login():
         # Basic presence check
         if not username or not password:
             flash("Both fields are required.", "warning")
-            return render_template("login.html", bg_class="auth-view")
+            return render_template("login.html")
 
         try:
             user = db_execute(
@@ -176,7 +187,7 @@ def login():
         except Exception as e:
             app.logger.error(f"[LOGIN] DB error: {e}")
             flash("A server error occurred. Please try again.", "danger")
-            return render_template("login.html", bg_class="auth-view")
+            return render_template("login.html")
 
         # Verify hashed password — avoid timing attacks by always calling check_password_hash
         if user and check_password_hash(user[2], password):
@@ -190,7 +201,7 @@ def login():
         else:
             flash("Invalid username or password.", "danger")
 
-    return render_template("login.html", bg_class="auth-view")
+    return render_template("login.html")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -223,7 +234,7 @@ def register():
         if errors:
             for err in errors:
                 flash(err, "danger")
-            return render_template("register.html", username=username, bg_class="auth-view")
+            return render_template("register.html", username=username)
 
         try:
             # Check for existing username (unique constraint)
@@ -232,7 +243,7 @@ def register():
             )
             if existing:
                 flash("That username is already taken. Please choose another.", "warning")
-                return render_template("register.html", username=username, bg_class="auth-view")
+                return render_template("register.html", username=username)
 
             # Hash then store — never store raw password
             hashed_pw = generate_password_hash(password)
@@ -247,7 +258,7 @@ def register():
             app.logger.error(f"[REGISTER] DB error: {e}")
             flash("Registration failed due to a server error. Please try again.", "danger")
 
-    return render_template("register.html", bg_class="auth-view")
+    return render_template("register.html")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -271,11 +282,11 @@ def logout():
 def add_student():
     """
     Find the smallest missing ID starting from 1, and insert the new student
-    including address and admission date.
+    including address, admission date, and photo.
     """
     if request.method == "POST":
         name       = request.form.get('name',           '').strip().title()
-        age        = request.form.get('age',            '').strip()
+        age_val    = request.form.get('age',            '').strip()
         dob        = request.form.get('dob',            '').strip()
         course     = request.form.get('course',         '').strip()
         address    = request.form.get('address',        '').strip()
@@ -285,10 +296,10 @@ def add_student():
         errors = []
         if not name:
             errors.append("Student name is required.")
-        if not age:
+        if not age_val:
             errors.append("Age is required.")
-        elif not age.isdigit() or not (1 <= int(age) <= 120):
-            errors.append("Age must be a valid number between 1 and 120.")
+        elif not age_val.isdigit() or not (0 <= int(age_val) <= 120):
+            errors.append("Age must be a valid number between 0 and 120.")
         if not dob:
             errors.append("Date of Birth is required.")
         if not course:
@@ -301,7 +312,7 @@ def add_student():
         if errors:
             for err in errors:
                 flash(err, "danger")
-            return render_template("add.html", name=name, age=age, dob=dob, course=course, address=address, admission_date=adm_date, bg_class="add-view")
+            return render_template("add.html", name=name, age=age, dob=dob, course=course, address=address, admission_date=adm_date)
 
         try:
             # ── FIND SMALLEST MISSING ID ─────────────────────────────────────
@@ -317,19 +328,29 @@ def add_student():
                 """, fetch='one')
                 next_id = row[0] if row and row[0] else 1
 
+            # ── HANDLE PHOTO UPLOAD ───────────────────────────────────────
+            photo_filename = 'default_profile.png'
+            if 'photo' in request.files:
+                file = request.files['photo']
+                if file and file.filename != '' and allowed_file(file.filename):
+                    ext = file.filename.rsplit('.', 1)[1].lower()
+                    photo_filename = f"{uuid.uuid4().hex}.{ext}"
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename))
+
             # ── INSERT RECORD ───────────────────────────────────────────────
             db_execute(
-                "INSERT INTO students (id, name, age, dob, course, address, admission_date) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                (next_id, name, int(age), dob, course, address, adm_date), commit=True
+                "INSERT INTO students (id, name, age, dob, course, address, admission_date, photo) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                (next_id, name, int(age_val), dob, course, address, adm_date, photo_filename), commit=True
             )
             flash(f"✅ '{name}' (ID: {next_id}) has been enrolled successfully!", "success")
             return redirect(url_for('view_students'))
 
         except Exception as e:
+            app.logger.error(f"[ADD_STUDENT] DB error: {e}")
             flash("Failed to add student. Please try again.", "danger")
-            return render_template("add.html", name=name, age=age, dob=dob, course=course, address=address, admission_date=adm_date, bg_class="add-view")
+            return render_template("add.html", name=name, age=age, dob=dob, course=course, address=address, admission_date=adm_date)
 
-    return render_template("add.html", bg_class="add-view")
+    return render_template("add.html")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -363,16 +384,16 @@ def view_students():
             )
             total    = total_row[0] if total_row else 0
             students = db_execute(
-                """SELECT id, name, age, dob, course, address, admission_date FROM students
+                """SELECT id, name, age, dob, course, address, admission_date, photo FROM students
                    WHERE name LIKE %s OR course LIKE %s OR address LIKE %s
-                   ORDER BY name ASC LIMIT %s OFFSET %s""",
+                   ORDER BY id ASC LIMIT %s OFFSET %s""",
                 (like, like, like, PER_PAGE, offset), fetch='all'
             ) or []
         else:
             total_row = db_execute("SELECT COUNT(*) FROM students", fetch='one')
             total     = total_row[0] if total_row else 0
             students  = db_execute(
-                "SELECT id, name, age, dob, course, address, admission_date FROM students ORDER BY name ASC LIMIT %s OFFSET %s",
+                "SELECT id, name, age, dob, course, address, admission_date, photo FROM students ORDER BY id ASC LIMIT %s OFFSET %s",
                 (PER_PAGE, offset), fetch='all'
             ) or []
 
@@ -391,8 +412,7 @@ def view_students():
         total_pages=total_pages,
         total=total,
         per_page=PER_PAGE,
-        session_timeout=SESSION_TIMEOUT_MINUTES,
-        bg_class="list-view"
+        session_timeout=SESSION_TIMEOUT_MINUTES
     )
 
 
@@ -404,28 +424,22 @@ def view_students():
 @login_required
 def api_search():
     """
-    JSON endpoint consumed by the AJAX live-search on the view page.
-
-    Query param : ?q=<search term> (partial match on name OR course)
-    Returns     : { students: [{id, name, age, course}, ...], total: int }
-
-    The frontend debounces keypress events and calls this endpoint,
-    then re-renders the table rows from the JSON response — no page reload.
-    Cap at 100 results to prevent large payloads.
+    JSON endpoint for AJAX live-search.
+    Returns: { students: [{id, name, age, course, photo, ...}], total: int }
     """
     query = request.args.get('q', '').strip()
     try:
         if query:
             like = f"%{query}%"
             rows = db_execute(
-                """SELECT id, name, age, dob, course, address, admission_date FROM students
+                """SELECT id, name, age, dob, course, address, admission_date, photo FROM students
                    WHERE name LIKE %s OR course LIKE %s OR address LIKE %s
-                   ORDER BY name ASC LIMIT 100""",
+                   ORDER BY id ASC LIMIT 100""",
                 (like, like, like), fetch='all'
             ) or []
         else:
             rows = db_execute(
-                "SELECT id, name, age, dob, course, address, admission_date FROM students ORDER BY name ASC LIMIT 100",
+                "SELECT id, name, age, dob, course, address, admission_date, photo FROM students ORDER BY id ASC LIMIT 100",
                 fetch='all'
             ) or []
 
@@ -437,7 +451,8 @@ def api_search():
                 "dob": r[3].strftime('%Y-%m-%d') if r[3] else "",
                 "course": r[4],
                 "address": r[5],
-                "admission_date": r[6].strftime('%Y-%m-%d') if r[6] else ""
+                "admission_date": r[6].strftime('%Y-%m-%d') if r[6] else "",
+                "photo": r[7]
             }
             for r in rows
         ]
@@ -476,23 +491,17 @@ def api_ping():
 def edit_student(id):
     """
     GET  → Fetch the student by ID and render a pre-filled edit form.
-           If student not found, redirect to view with a warning flash.
-    POST → Validate updated fields, run UPDATE query, redirect to view.
-           On validation error, re-render form with current input values
-           so the user does not lose their edits.
+    POST → Validate updated fields, handle optional photo upload, run UPDATE query.
     """
     try:
         row = db_execute(
-            "SELECT id, name, age, dob, course, address, admission_date FROM students WHERE id = %s",
+            "SELECT id, name, age, dob, course, address, admission_date, photo FROM students WHERE id = %s",
             (id,), fetch='one'
         )
         if row:
-            # Convert date to string for HTML5 date input compatibility
             student = list(row)
-            if student[3]:
-                student[3] = student[3].strftime('%Y-%m-%d')
-            if student[6]:
-                student[6] = student[6].strftime('%Y-%m-%d')
+            if student[3]: student[3] = student[3].strftime('%Y-%m-%d')
+            if student[6]: student[6] = student[6].strftime('%Y-%m-%d')
             student = tuple(student)
         else:
             student = None
@@ -507,47 +516,45 @@ def edit_student(id):
 
     if request.method == "POST":
         name     = request.form.get('name',           '').strip().title()
-        age      = request.form.get('age',            '').strip()
         dob      = request.form.get('dob',            '').strip()
         course   = request.form.get('course',         '').strip()
         address  = request.form.get('address',        '').strip()
         adm_date = request.form.get('admission_date', '').strip()
+        age_val  = request.form.get('age',            '').strip()
 
         errors = []
-        if not name:
-            errors.append("Student name is required.")
-        if not age:
-            errors.append("Age is required.")
-        elif not age.isdigit() or not (1 <= int(age) <= 120):
-            errors.append("Age must be a valid number between 1 and 120.")
-        if not dob:
-            errors.append("Date of Birth is required.")
-        if not course:
-            errors.append("Course is required.")
-        if not address:
-            errors.append("Address is required.")
-        if not adm_date:
-            errors.append("Admission date is required.")
+        if not name: errors.append("Student name is required.")
+        if not age_val: errors.append("Age is required.")
+        elif not age_val.isdigit(): errors.append("Age must be a valid number.")
+        if not dob: errors.append("Date of Birth is required.")
+        if not course: errors.append("Course is required.")
 
         if errors:
-            for err in errors:
-                flash(err, "danger")
-            # Preserve user's current input on re-render
-            return render_template("edit.html", student=(id, name, age, dob, course, address, adm_date), bg_class="add-view")
+            for err in errors: flash(err, "danger")
+            return render_template("edit.html", student=(id, name, age_val, dob, course, address, adm_date, student[7]))
 
         try:
+            # ── HANDLE PHOTO UPLOAD (EDIT) ──────────────────────────────────
+            photo_filename = request.form.get('current_photo', student[7])
+            if 'photo' in request.files:
+                file = request.files['photo']
+                if file and file.filename != '' and allowed_file(file.filename):
+                    ext = file.filename.rsplit('.', 1)[1].lower()
+                    photo_filename = f"{uuid.uuid4().hex}.{ext}"
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename))
+
             db_execute(
-                "UPDATE students SET name=%s, age=%s, dob=%s, course=%s, address=%s, admission_date=%s WHERE id=%s",
-                (name, int(age), dob, course, address, adm_date, id), commit=True
+                "UPDATE students SET name=%s, age=%s, dob=%s, course=%s, address=%s, admission_date=%s, photo=%s WHERE id=%s",
+                (name, int(age_val), dob, course, address, adm_date, photo_filename, id), commit=True
             )
             flash(f"✅ Student #{id} updated successfully!", "success")
             return redirect(url_for('view_students'))
         except Exception as e:
             app.logger.error(f"[EDIT_STUDENT] Update error: {e}")
             flash("Update failed. Please try again.", "danger")
-            return render_template("edit.html", student=(id, name, age, dob, course, address, adm_date), bg_class="add-view")
+            return render_template("edit.html", student=(id, name, age_val, dob, course, address, adm_date, student[7]))
 
-    return render_template("edit.html", student=student, bg_class="add-view")
+    return render_template("edit.html", student=student)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

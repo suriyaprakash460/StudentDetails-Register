@@ -16,7 +16,44 @@
 
 <div class="row justify-content-center">
     <div class="col-lg-7">
-        <form action="{{ url_for('edit_student', id=student[0]) }}" method="POST" novalidate id="editForm">
+        <form action="{{ url_for('edit_student', id=student[0]) }}" 
+              method="POST" 
+              enctype="multipart/form-data"
+              class="needs-validation" 
+              id="editForm" 
+              novalidate>
+
+            <input type="hidden" name="current_photo" value="{{ student[7] }}">
+
+            <!-- Photo Update -->
+            <div class="mb-4 text-center">
+                <div class="mb-3">
+                    <label class="form-label d-block text-center">Update Photo</label>
+                    <div class="position-relative d-inline-block shadow-lg rounded-circle" style="padding: 5px; background: white;">
+                        <img id="photo_preview" 
+                             src="{{ url_for('static', filename='uploads/' + student[7]) }}" 
+                             alt="Student Preview" 
+                             class="rounded-circle border shadow-sm" 
+                             style="width:120px; height:120px; object-fit:cover;">
+                        <label for="photo" 
+                               class="btn btn-sm btn-primary rounded-circle position-absolute" 
+                               style="bottom:0; right:0; padding:.2rem .4rem;"
+                               title="Upload Photo">
+                            <i class="bi bi-upload"></i>
+                            <input type="file" id="photo" name="photo" class="d-none" accept="image/*" onchange="previewImage(this)">
+                        </label>
+                        <button type="button" 
+                                class="btn btn-sm btn-success rounded-circle position-absolute" 
+                                style="bottom:0; left:0; padding:.2rem .4rem;"
+                                title="Live Camera"
+                                data-bs-toggle="modal"
+                                data-bs-target="#cameraModal">
+                            <i class="bi bi-camera-fill"></i>
+                        </button>
+                    </div>
+                    <div class="mt-2 small text-muted">Click the camera to take a live photo or upload icon to change file.</div>
+                </div>
+            </div>
 
             <!-- Name -->
             <div class="mb-4">
@@ -214,6 +251,58 @@ const el = {
     admDate: document.getElementById('admission_date')
 };
 
+/** 0.A PHOTO PREVIEW & CAMERA HANDLER **/
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('photo_preview').src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+let camStream = null;
+const cameraModalEl = document.getElementById('cameraModal');
+const video = document.getElementById('webcamVideo');
+const canvas = document.getElementById('captureCanvas');
+
+cameraModalEl.addEventListener('shown.bs.modal', async () => {
+    try {
+        camStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = camStream;
+    } catch (err) {
+        alert("Unable to access camera: " + err.message);
+    }
+});
+
+cameraModalEl.addEventListener('hidden.bs.modal', () => {
+    if (camStream) {
+        camStream.getTracks().forEach(track => track.stop());
+        camStream = null;
+    }
+});
+
+function capturePhoto() {
+    const context = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    canvas.toBlob(blob => {
+        const file = new File([blob], "captured_edit.png", { type: "image/png" });
+        const container = new DataTransfer();
+        container.items.add(file);
+        document.getElementById('photo').files = container.files;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => document.getElementById('photo_preview').src = e.target.result;
+        reader.readAsDataURL(file);
+        
+        bootstrap.Modal.getInstance(cameraModalEl).hide();
+    }, 'image/png');
+}
+
 let COURSE_DATA = {};
 
 async function init() {
@@ -245,35 +334,72 @@ async function init() {
     }
 }
 
-/** 1.1 AUTOMATED FIELDS (AGE & ADMISSION) **/
-function initAutomatedFields() {
-    // 1. Age calculation listener
-    el.dob.addEventListener('change', calculateAge);
+/** 1.1 DATE SELECTOR SETUP (D-M-Y ALIGNMENT) **/
+function setupDatePickers() {
+    const years = [], days = [];
+    const currentYear = new Date().getFullYear();
     
-    // Initial calculation if DOB exists
-    if (el.dob.value) calculateAge();
-}
+    // Days 1-31
+    for (let i = 1; i <= 31; i++) days.push(String(i).padStart(2, '0'));
+    // Years: Multi-century range (1920 to 3050)
+    for (let i = 3050; i >= 1920; i--) years.push(i);
 
-function calculateAge() {
-    const dobValue = el.dob.value;
-    if (!dobValue) return;
+    const dDay = document.getElementById('dob_day'),
+          dMon = document.getElementById('dob_month'),
+          dYear = document.getElementById('dob_year'),
+          dHid = document.getElementById('dob_hidden');
 
-    const birthDate = new Date(dobValue);
-    const today = new Date();
+    const aDay = document.getElementById('adm_day'),
+          aMon = document.getElementById('adm_month'),
+          aYear = document.getElementById('adm_year'),
+          aHid = document.getElementById('adm_hidden');
+
+    // Populate selects
+    days.forEach(d => {
+        dDay.add(new Option(d, d));
+        aDay.add(new Option(d, d));
+    });
     
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
+    // Shared multi-century range for both selectors
+    years.forEach(y => {
+        dYear.add(new Option(y, y));
+        aYear.add(new Option(y, y));
+    });
+
+    const syncDOB = () => {
+        if(dDay.value && dMon.value && dYear.value) 
+            dHid.value = `${dYear.value}-${dMon.value}-${dDay.value}`;
+    };
+    const syncADM = () => {
+        if(aDay.value && aMon.value && aYear.value) 
+            aHid.value = `${aYear.value}-${aMon.value}-${aDay.value}`;
+    };
+
+    [dDay, dMon, dYear].forEach(s => s.addEventListener('change', syncDOB));
+    [aDay, aMon, aYear].forEach(s => s.addEventListener('change', syncADM));
     
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
+    // Initial sync from existing student data
+    if(dHid.value) {
+        const p = dHid.value.split('-');
+        if(p.length === 3) { dYear.value = p[0]; dMon.value = p[1]; dDay.value = p[2]; }
     }
-
-    if (age < 0) age = 0;
-    
-    el.ageDisp.value = `${age} Years`;
-    el.ageHidden.value = age;
+    if(aHid.value) {
+        const p = aHid.value.split('-');
+        if(p.length === 3) { aYear.value = p[0]; aMon.value = p[1]; aDay.value = p[2]; }
+    }
 }
 
+/** 1.1.1 AGE SELECTOR SETUP **/
+function setupAgePicker() {
+    const ageSelect = document.getElementById('age');
+    const existingAge = "{{ student[2] }}";
+    
+    for (let i = 1; i <= 120; i++) {
+        const opt = new Option(i, i);
+        if (existingAge && i == existingAge) opt.selected = true;
+        ageSelect.add(opt);
+    }
+}
 
 /** 1.2 COURSE SELECTION & PARSING **/
 function parseExistingCourse() {
@@ -565,4 +691,26 @@ document.getElementById('editForm').addEventListener('submit', function (e) {
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
 });
 </script>
+
+<!-- ══ LIVE CAMERA MODAL ═════════════════════════════════════════════════ -->
+<div class="modal fade" id="cameraModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h6 class="modal-title fw-bold"><i class="bi bi-camera-fill me-2"></i>Live Capture</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center bg-black p-0 overflow-hidden" style="min-height: 300px;">
+                <video id="webcamVideo" autoplay muted playsinline style="width:100%; height:auto;"></video>
+                <canvas id="captureCanvas" class="d-none"></canvas>
+            </div>
+            <div class="modal-footer border-0 d-flex justify-content-center pb-4">
+                <button class="btn btn-success px-4 fw-bold" onclick="capturePhoto()">
+                    <i class="bi bi-record-circle me-1"></i>Capture Now
+                </button>
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

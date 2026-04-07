@@ -35,6 +35,7 @@
         <thead class="table-dark">
             <tr>
                 <th scope="col" style="white-space:nowrap">ID</th>
+                <th scope="col" style="white-space:nowrap">Photo</th>
                 <th scope="col">Name</th>
                 <th scope="col">Age</th>
                 <th scope="col" style="white-space:nowrap">DOB</th>
@@ -48,6 +49,12 @@
             {% for s in students %}
             <tr id="row-{{ s[0] }}">
                 <td data-label="ID"><span class="badge" style="background:var(--primary-l);color:var(--primary);font-size:.82rem;font-weight:700">{{ s[0] }}</span></td>
+                <td data-label="Photo">
+                    <img src="{{ url_for('static', filename='uploads/' + s[7]) }}" 
+                         alt="Profile" 
+                         class="rounded-circle border" 
+                         style="width:36px; height:36px; object-fit:cover;">
+                </td>
                 <td data-label="Name" class="fw-600" style="font-weight:600">{{ s[1] }}</td>
                 <td data-label="Age">{{ s[2] }}</td>
                 <td data-label="DOB" class="small">{{ s[3].strftime('%d-%m-%Y') if s[3] else '-' }}</td>
@@ -70,7 +77,7 @@
             </tr>
             {% else %}
             <tr id="emptyRow">
-                <td colspan="8">
+                <td colspan="9">
                     <div class="empty-state">
                         <i class="bi bi-inbox empty-icon"></i>
                         <p class="fw-600 mb-1" style="font-weight:600">No students found</p>
@@ -191,6 +198,12 @@
             <td data-label="ID">
                 <span class="badge" style="background:var(--primary-l);color:var(--primary);font-size:.82rem;font-weight:700">${s.id}</span>
             </td>
+            <td data-label="Photo">
+                <img src="/static/uploads/${s.photo}" 
+                     alt="Profile" 
+                     class="rounded-circle border" 
+                     style="width:36px; height:36px; object-fit:cover;">
+            </td>
             <td data-label="Name" style="font-weight:600">${escHtml(s.name)}</td>
             <td data-label="Age">${s.age}</td>
             <td data-label="DOB" class="small">${fmt(s.dob)}</td>
@@ -215,7 +228,7 @@
     function emptyRow(query) {
         return `
         <tr id="emptyRow">
-            <td colspan="8">
+            <td colspan="9">
                 <div class="empty-state">
                     <i class="bi bi-search empty-icon"></i>
                     <p style="font-weight:600" class="mb-1">No results for "${escHtml(query)}"</p>

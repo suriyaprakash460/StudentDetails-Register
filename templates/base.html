@@ -12,53 +12,37 @@
 
     <style>
         :root {
-            --primary:    #4f46e5;
-            --primary-d:  #4338ca;
-            --primary-l:  #ede9fe;
-            --success:    #16a34a;
-            --danger:     #dc2626;
-            --warning:    #d97706;
-            --bg:         #f1f5f9;
-            --surface:    #ffffff;
-            --text:       #1e293b;
+            --primary:    #6366f1;
+            --primary-d:  #4f46e5;
+            --primary-l:  #eef2ff;
+            --success:    #10b981;
+            --danger:     #ef4444;
+            --warning:    #f59e0b;
+            --bg:         linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            --surface:    rgba(255, 255, 255, 0.95);
+            --text:       #0f172a;
             --muted:      #64748b;
-            --border:     #e2e8f0;
-            --radius:     14px;
-            --shadow:     0 4px 24px rgba(0,0,0,.08);
+            --border:     rgba(226, 232, 240, 0.5);
+            --radius:     20px;
+            --shadow:     0 10px 40px -10px rgba(0,0,0,0.1);
+            --glass:      blur(12px) saturate(180%);
         }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-size: cover !important;
-            background-position: center !important;
-            background-attachment: fixed !important;
+            background: #f1f5f9;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.05) 0, transparent 50%),
+                radial-gradient(at 0% 100%, rgba(99, 102, 241, 0.1) 0, transparent 50%);
+            background-attachment: fixed;
             color: var(--text);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            position: relative;
-            overflow-x: hidden;
-            transition: background 0.5s ease-in-out;
-        }
-
-        /* ── Dynamic Page Backgrounds ─────────────── */
-        body.home-view { background: linear-gradient(rgba(30,27,75,0.7), rgba(30,27,75,0.4)), url('/static/home-bg.png'); }
-        body.list-view { background: linear-gradient(rgba(30,27,75,0.75), rgba(30,27,75,0.5)), url('/static/list-bg.png'); }
-        body.add-view  { background: linear-gradient(rgba(30,27,75,0.7), rgba(30,27,75,0.4)), url('/static/add-bg.png'); }
-        body.auth-view { background: linear-gradient(rgba(30,27,75,0.8), rgba(30,27,75,0.6)), url('/static/auth-bg.png'); }
-        body.default-view { background: linear-gradient(rgba(30,27,75,0.7), rgba(30,27,75,0.4)), url('/static/academic-bg.png'); }
-
-        /* ── GLASS OVERLAY EFFECT ────────────────── */
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(8px);
-            z-index: -1;
-            pointer-events: none;
         }
 
         /* ── NAVBAR ─────────────────────────────── */
@@ -146,10 +130,17 @@
         /* ── CARD ────────────────────────────────── */
         .content-card {
             background: var(--surface);
+            backdrop-filter: var(--glass);
+            -webkit-backdrop-filter: var(--glass);
             border: 1px solid var(--border);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
-            padding: 2rem;
+            padding: 2.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .content-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 50px -15px rgba(0,0,0,0.15);
         }
         @media (max-width: 576px) { .content-card { padding: 1.25rem; } }
 
@@ -242,40 +233,10 @@
         footer {
             background: var(--surface);
             border-top: 1px solid var(--border);
-            padding: 1.5rem 1rem;
+            padding: 1rem;
             text-align: center;
-            font-size: .8rem;
+            font-size: .78rem;
             color: var(--muted);
-            margin-top: auto;
-        }
-        .footer-brand {
-            font-weight: 700;
-            color: var(--text);
-            letter-spacing: -0.2px;
-        }
-        .footer-link {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-            transition: all .2s;
-            border-bottom: 1.5px solid transparent;
-        }
-        .footer-link:hover {
-            color: var(--primary-d);
-            border-bottom-color: var(--primary);
-        }
-        .footer-divider {
-            margin: 0 .5rem;
-            opacity: .3;
-        }
-        .footer-tagline {
-            display: block;
-            margin-top: .4rem;
-            font-size: .72rem;
-            font-weight: 500;
-            letter-spacing: .02em;
-            text-transform: uppercase;
-            opacity: .6;
         }
 
         /* ── SESSION TIMEOUT MODAL ───────────────── */
@@ -330,7 +291,7 @@
 
     {% block extra_head %}{% endblock %}
 </head>
-<body class="{{ bg_class | default('default-view') }}">
+<body>
 
 <!-- ══ NAVBAR ══════════════════════════════════════════════════════════════ -->
 <nav class="navbar navbar-expand-lg navbar-dark">
@@ -417,22 +378,8 @@
 
 <!-- ══ FOOTER ═══════════════════════════════════════════════════════════════ -->
 <footer>
-    <div class="container-lg">
-        <span class="footer-brand">StudentMS</span>
-        <span class="footer-divider">|</span>
-        Handcrafted with <i class="bi bi-heart-fill text-danger mx-1" style="font-size:.7rem; animation: pulse 1.5s infinite"></i> by 
-        <a href="https://github.com/suriyaprakash460" class="footer-link" target="_blank">Suriyaprakash S</a>
-        <span class="footer-tagline">🚀 Empowering Academic Excellence &copy; 2024</span>
-    </div>
+    &copy; 2024 StudentMS &mdash; Built with <i class="bi bi-heart-fill text-danger" style="font-size:.7rem"></i> Flask &amp; MySQL
 </footer>
-
-<style>
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-}
-</style>
 
 
 <!-- ══ SESSION TIMEOUT MODAL ════════════════════════════════════════════════ -->
@@ -463,19 +410,24 @@
 </div>
 
 <script>
+/** Global session config from Flask */
+window.SESSION_CONFIG = {
+    timeoutMinutes: {{ session_timeout | default(30) }},
+    warningMinutes: 5,
+    pingCooldownSecs: 60
+};
+</script>
+
+<script>
 /**
  * SESSION TIMEOUT MANAGER
  * ──────────────────────────────────────────────────────────────────────────
- * - Counts down from SESSION_TIMEOUT_MINUTES.
- * - Any user interaction (click / keypress) resets the timer and pings
- *   /api/ping to refresh the server-side last_active timestamp.
- * - Shows a warning modal when 5 minutes remain.
- * - Auto-redirects to /logout when time runs out.
  */
 (function () {
-    const TIMEOUT_MS    = {{ session_timeout | default(30) }} * 60 * 1000;
-    const WARN_MS       = 5 * 60 * 1000;   // show modal at 5 min remaining
-    const PING_COOLDOWN = 60 * 1000;        // ping server at most once/min
+    const config        = window.SESSION_CONFIG;
+    const TIMEOUT_MS    = config.timeoutMinutes * 60 * 1000;
+    const WARN_MS       = config.warningMinutes * 60 * 1000;
+    const PING_COOLDOWN = config.pingCooldownSecs * 1000;
 
     let remaining    = TIMEOUT_MS;
     let lastPing     = Date.now();
