@@ -1,0 +1,42 @@
+[
+  {
+    "id": "MHC01",
+    "name": "Mumbai",
+    "stateId": "MH"
+  },
+  {
+    "id": "MHC02",
+    "name": "Pune",
+    "stateId": "MH"
+  },
+  {
+    "id": "KAC01",
+    "name": "Bangalore",
+    "stateId": "KA"
+  },
+  {
+    "id": "KAC02",
+    "name": "Mysore",
+    "stateId": "KA"
+  },
+  {
+    "id": "TNC01",
+    "name": "Chennai",
+    "stateId": "TN"
+  },
+  {
+    "id": "TNC02",
+    "name": "Coimbatore",
+    "stateId": "TN"
+  },
+  {
+    "id": "GJC01",
+    "name": "Ahmedabad",
+    "stateId": "GJ"
+  },
+  {
+    "id": "GJC02",
+    "name": "Surat",
+    "stateId": "GJ"
+  }
+]

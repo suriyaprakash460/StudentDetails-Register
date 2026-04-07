@@ -1,0 +1,32 @@
+[
+  {
+    "id": "V01",
+    "name": "Village 1",
+    "blockId": "MHD01B01"
+  },
+  {
+    "id": "V02",
+    "name": "Village 2",
+    "blockId": "MHD01B01"
+  },
+  {
+    "id": "V03",
+    "name": "Village 3",
+    "blockId": "MHD01B02"
+  },
+  {
+    "id": "V04",
+    "name": "Village 4",
+    "blockId": "MHD01B02"
+  },
+  {
+    "id": "V05",
+    "name": "Village 5",
+    "blockId": "MHD02B01"
+  },
+  {
+    "id": "V06",
+    "name": "Village 6",
+    "blockId": "MHD02B01"
+  }
+]

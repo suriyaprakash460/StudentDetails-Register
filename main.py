@@ -274,7 +274,7 @@ def add_student():
     including address and admission date.
     """
     if request.method == "POST":
-        name       = request.form.get('name',           '').strip()
+        name       = request.form.get('name',           '').strip().title()
         age        = request.form.get('age',            '').strip()
         dob        = request.form.get('dob',            '').strip()
         course     = request.form.get('course',         '').strip()
@@ -506,7 +506,7 @@ def edit_student(id):
         return redirect(url_for('view_students'))
 
     if request.method == "POST":
-        name     = request.form.get('name',           '').strip()
+        name     = request.form.get('name',           '').strip().title()
         age      = request.form.get('age',            '').strip()
         dob      = request.form.get('dob',            '').strip()
         course   = request.form.get('course',         '').strip()

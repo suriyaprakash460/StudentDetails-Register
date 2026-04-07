@@ -88,21 +88,54 @@
                 <div class="form-text">Enter the full programme name.</div>
             </div>
 
-            <!-- Address -->
+            <!-- Address Selection -->
             <div class="mb-4">
-                <label for="address" class="form-label">
-                    Full Address <span class="text-danger">*</span>
+                <label class="form-label">
+                    Residential Address <span class="text-danger">*</span>
                 </label>
-                <div style="position:relative">
-                    <i class="bi bi-geo-alt-fill" style="position:absolute;left:14px;top:15px;color:var(--muted)"></i>
-                    <textarea class="form-control"
-                               id="address"
-                               name="address"
-                               placeholder="e.g. 123 Street Name, City, State, ZIP"
-                               style="padding-left:2.6rem; min-height: 80px;"
-                               required>{{ address | default('') }}</textarea>
+                <div class="row gx-2 gy-3">
+                    <!-- Pincode Search (The WOW Feature) -->
+                    <div class="col-md-12">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-geo-fill"></i></span>
+                            <input type="text" id="pincode_search" class="form-control" placeholder="Enter Pincode to auto-fill (All India)" maxlength="6">
+                            <button class="btn btn-outline-primary" type="button" id="btnSearchPin">Fetch Details</button>
+                        </div>
+                        <div class="form-text">Type 6-digit PIN and click Fetch.</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <select id="country" class="form-select custom-select" required>
+                            <option value="India" selected>India</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <select id="state" class="form-select custom-select" required>
+                            <option value="" disabled selected>Select State</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <select id="district" class="form-select custom-select" required>
+                            <option value="" disabled selected>Select District</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <select id="taluk" class="form-select custom-select" required>
+                            <option value="" disabled selected>Select Taluk / Tehsil</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-12">
+                        <input type="text" id="village_street" class="form-control" placeholder="Village / Street Name / Building" list="village_options" required>
+                        <datalist id="village_options"></datalist>
+                    </div>
                 </div>
-                <div class="form-text">Provide the current residential address.</div>
+                <!-- Hidden input for combined address -->
+                <input type="hidden" id="address" name="address" value="">
+                <div class="form-text mt-2" id="combinedAddressPreview">Preview: (Select details above)</div>
             </div>
 
             <!-- Admission Date -->
@@ -141,26 +174,223 @@
 
 {% block extra_scripts %}
 <script>
-/* Prevent double-submit and show loading state on submit */
-document.getElementById('addForm').addEventListener('submit', function (e) {
-    const btn      = document.getElementById('submitBtn');
-    const name     = document.getElementById('name').value.trim();
-    const age      = document.getElementById('age').value.trim();
-    const dob      = document.getElementById('dob').value.trim();
-    const course   = document.getElementById('course').value.trim();
-    const address  = document.getElementById('address').value.trim();
-    const date     = document.getElementById('admission_date').value.trim();
+/**
+ * GEOGRAPHY DATA SERVICE
+ * We load a comprehensive JSON mapping of State -> District -> Taluka
+ * covering all of India.
+ */
 
-    /* Client-side guard — server also validates */
-    if (!name || !age || !dob || !course || !address || !date) return;
-    if (isNaN(age) || +age < 1 || +age > 120) {
-        e.preventDefault();
-        alert('Age must be a number between 1 and 120.');
+let GEODATA = {};
+
+const el = {
+    state: document.getElementById('state'),
+    dist: document.getElementById('district'),
+    taluk: document.getElementById('taluk'),
+    village: document.getElementById('village_street'),
+    pinInput: document.getElementById('pincode_search'),
+    btnPin: document.getElementById('btnSearchPin'),
+    vOpts: document.getElementById('village_options'),
+    hiddenAddr: document.getElementById('address'),
+    preview: document.getElementById('combinedAddressPreview')
+};
+
+// 1. LOAD DATA
+async function initGeodata() {
+    try {
+        const response = await fetch('/static/india_geodata.json');
+        GEODATA = await response.json();
+        
+        // Populate States
+        const states = Object.keys(GEODATA).sort();
+        states.forEach(s => el.state.add(new Option(s, s)));
+    } catch (e) {
+        console.error("Failed to load geography data", e);
+    }
+}
+
+// 2. CASCADE LOGIC
+el.state.addEventListener('change', function() {
+    el.dist.innerHTML = '<option value="" disabled selected>Select District</option>';
+    el.taluk.innerHTML = '<option value="" disabled selected>Select District first</option>';
+    
+    if (GEODATA[this.value]) {
+        const districts = Object.keys(GEODATA[this.value]).sort();
+        districts.forEach(d => el.dist.add(new Option(d, d)));
+    }
+    updatePreview();
+});
+
+el.dist.addEventListener('change', function() {
+    el.taluk.innerHTML = '<option value="" disabled selected>Select Taluk / Tehsil</option>';
+    
+    const stateVal = el.state.value;
+    if (GEODATA[stateVal] && GEODATA[stateVal][this.value]) {
+        const talukas = GEODATA[stateVal][this.value];
+        talukas.forEach(t => el.taluk.add(new Option(t, t)));
+    }
+    updatePreview();
+});
+
+/** 3. UPDATE PREVIEW & HIDDEN INPUT **/
+function updatePreview() {
+    const parts = [
+        el.village.value.trim(),
+        el.taluk.value.trim(),
+        el.dist.value || '',
+        el.state.value || '',
+        'India'
+    ].filter(p => p && !p.includes('Select'));
+    
+    const full = parts.join(', ');
+    el.hiddenAddr.value = full;
+    el.preview.textContent = full ? `Preview: ${full}` : 'Preview: (Select details above)';
+}
+
+el.taluk.addEventListener('change', updatePreview);
+
+/** 3.1 NATIONWIDE VILLAGE/POST-OFFICE SEARCH **/
+let searchTimer;
+el.village.addEventListener('input', function(e) {
+    updatePreview();
+    
+    // Only search if user is typing (not selecting from list)
+    if (e.inputType === 'insertReplacementText' || e.inputType === undefined) return;
+
+    const query = this.value.trim();
+    if (query.length < 4) return;
+
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(async () => {
+        try {
+            const res = await fetch(`https://api.postalpincode.in/postoffice/${encodeURIComponent(query)}`);
+            const data = await res.json();
+            
+            if (data[0].Status === "Success") {
+                const posts = data[0].PostOffice;
+                el.vOpts.innerHTML = '';
+                posts.slice(0, 15).forEach(p => {
+                    // format: Village Name, District, State (PIN: 123456)
+                    const val = `${p.Name}, ${p.District}, ${p.State} (PIN: ${p.Pincode})`;
+                    const opt = document.createElement('option');
+                    opt.value = val;
+                    el.vOpts.appendChild(opt);
+                });
+            }
+        } catch (e) {
+            console.error("Village search error", e);
+        }
+    }, 500);
+});
+
+// Detect when user selects an option from the datalist
+el.village.addEventListener('change', function() {
+    const val = this.value;
+    if (val.includes('(PIN: ')) {
+        // Auto-fill logic
+        const parts = val.split(',').map(s => s.trim());
+        if (parts.length >= 3) {
+            const vName = parts[0];
+            const dName = parts[1];
+            const sNamePart = parts[2].split('(')[0].trim();
+            const pinPart = val.match(/\(PIN: (\d+)\)/);
+            
+            // Set Village name to just the name part
+            this.value = vName;
+            
+            // Trigger Pincode search to fill the rest reliably
+            if (pinPart && pinPart[1]) {
+                el.pinInput.value = pinPart[1];
+                el.btnPin.click();
+            }
+        }
+    }
+});
+
+/** 4. THE WOW FEATURE: PINCODE AUTO-ALLOCATION **/
+el.btnPin.addEventListener('click', async function() {
+    const pin = el.pinInput.value.trim();
+    if (pin.length !== 6 || isNaN(pin)) {
+        alert('Please enter a valid 6-digit Pincode.');
         return;
     }
 
-    btn.disabled   = true;
-    btn.innerHTML  = '<span class="spinner-border spinner-border-sm me-1"></span>Enrolling…';
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+        const data = await res.json();
+
+        if (data[0].Status === "Success") {
+            const posts = data[0].PostOffice;
+            const item = posts[0];
+            
+            let apiState = item.State.replace(/\s&\s/g, ' And ');
+            if (apiState === "Andaman & Nicobar Islands") apiState = "Andaman And Nicobar Islands";
+            
+            const matchedState = Object.keys(GEODATA).find(s => s.toLowerCase() === apiState.toLowerCase());
+            
+            if (matchedState) {
+                el.state.value = matchedState;
+                el.state.dispatchEvent(new Event('change'));
+                
+                setTimeout(() => {
+                    const districtNames = Object.keys(GEODATA[matchedState]);
+                    const matchedDist = districtNames.find(d => d.toLowerCase().includes(item.District.toLowerCase()) || item.District.toLowerCase().includes(d.toLowerCase()));
+                    
+                    if (matchedDist) {
+                        el.dist.value = matchedDist;
+                        el.dist.dispatchEvent(new Event('change'));
+                        
+                        setTimeout(() => {
+                             const apiTaluk = item.Block;
+                             const talukas = GEODATA[matchedState][matchedDist];
+                             const foundTaluk = talukas.find(t => t.toLowerCase() === apiTaluk.toLowerCase());
+                             
+                             if (foundTaluk) {
+                                 el.taluk.value = foundTaluk;
+                             } else if (talukas.length > 0) {
+                                 const matchedName = talukas.find(t => t.toLowerCase().includes(apiTaluk.toLowerCase()));
+                                 if (matchedName) el.taluk.value = matchedName;
+                             }
+                             
+                             el.vOpts.innerHTML = posts.map(p => `<option value="${p.Name}"></option>`).join('');
+                             updatePreview();
+                        }, 100);
+                    }
+                }, 100);
+            }
+        } else {
+            alert('Pincode not found. Please select manually.');
+        }
+    } catch (e) {
+        alert('Error fetching pincode details.');
+    } finally {
+        this.disabled = false;
+        this.innerHTML = 'Fetch Details';
+    }
+});
+
+initGeodata();
+
+// Auto Title Case for Name field
+const nameInput = document.getElementById('name');
+if (nameInput) {
+    nameInput.addEventListener('blur', function() {
+        this.value = this.value.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    });
+}
+
+/* Double-submit prevention */
+document.getElementById('addForm').addEventListener('submit', function (e) {
+    const btn = document.getElementById('submitBtn');
+    if (!el.hiddenAddr.value || !el.state.value || !el.dist.value || el.dist.value.includes('Select')) {
+        e.preventDefault();
+        alert('Please fill out all address fields correctly.');
+        return;
+    }
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Enrolling…';
 });
 </script>
 {% endblock %}

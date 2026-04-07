@@ -29,7 +29,8 @@
                     <th scope="col">ID</th>
                     <th scope="col">Name</th>
                     <th scope="col">Age</th>
-                    <th scope="col" class="w-50">Course</th>
+                    <th scope="col">Course</th>
+                    <th scope="col">Address</th>
                     <th scope="col" class="text-end">Actions</th>
                 </tr>
             </thead>
@@ -40,6 +41,7 @@
                     <td>{{ student[1] }}</td>
                     <td>{{ student[2] }}</td>
                     <td>{{ student[3] }}</td>
+                    <td class="small text-muted">{{ student[4] }}</td>
                     <td class="text-end">
                         <a href="/edit/{{ student[0] }}" class="btn btn-sm btn-warning">Edit</a>
                         <form action="/delete/{{ student[0] }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete student \'{{ student[1] }}\'?\n\nThis action cannot be undone.');">

@@ -52,7 +52,7 @@
                 <td data-label="Age">{{ s[2] }}</td>
                 <td data-label="DOB" class="small">{{ s[3].strftime('%d-%m-%Y') if s[3] else '-' }}</td>
                 <td data-label="Course"><span class="badge bg-light text-dark fw-500 border">{{ s[4] }}</span></td>
-                <td data-label="Address" class="small text-muted" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ s[5] }}">{{ s[5] }}</td>
+                <td data-label="Address" class="small text-muted">{{ s[5] }}</td>
                 <td data-label="Date" class="small">{{ s[6].strftime('%d-%m-%Y') if s[6] else '-' }}</td>
                 <td data-label="" class="actions-cell text-end">
                     <a href="{{ url_for('edit_student', id=s[0]) }}"
@@ -197,7 +197,7 @@
             <td data-label="Course">
                 <span class="badge bg-light text-dark border">${escHtml(s.course)}</span>
             </td>
-            <td data-label="Address" class="small text-muted" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escHtml(s.address)}">${escHtml(s.address)}</td>
+            <td data-label="Address" class="small text-muted">${escHtml(s.address)}</td>
             <td data-label="Date" class="small">${fmt(s.admission_date)}</td>
             <td data-label="" class="actions-cell text-end">
                 <a href="/edit/${s.id}" class="btn btn-sm btn-warning me-1" title="Edit">
