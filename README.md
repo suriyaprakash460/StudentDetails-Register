@@ -39,16 +39,16 @@ Designed for scalability and administrative excellence using **Flask**, **MySQL*
 - **Comprehensive Database**: Pre-loaded with hundreds of Indian academic degrees from Medical and Engineering to Arts and Vocational fields.
 - **Auto-Parsing Logic**: Intelligent enough to parse existing student courses and auto-select the hierarchy during record updates.
 
-###  Search & UI Excellence
-- **AJAX Live Filter**: Search through thousands of records instantly by Name, Course, or ID without a page refresh.
+### ✨ Search & UI Excellence
+- **Turbocharged AJAX Live Filter**: Instantly search records without page reloads. Includes **Real-Time Match Highlighting**, URL query state synchronization, and AbortController concurrency management!
+- **100% Mobile Ready**: Premium responsive design that effortlessly cascades complex table data into intuitive, touch-friendly mobile cards on any screen size.
 - **Automated Age Calculation**: Age is instantly calculated from the **Date of Birth** calendar selection, ensuring data accuracy.
-- **Calendar-Based Input**: Modern, native calendar pickers for **Date of Birth** and **Admission Date** (System Auto-set).
-- **Live Camera Capture**: Take student photos directly from the web browser's webcam.
-- **Premium UX Design**: Fluid transitions, hover effects, and a mobile-first responsive layout powered by **Bootstrap 5**.
+- **Calendar & Camera Integration**: Modern native calendar pickers and a browser-based Live Camera capture system for student portraits.
+- **Dynamic Backgrounds**: Adaptive gradient overlays and subtle float animations elevate the "Glassmorphism" UI aesthetic.
 
-###  Security & Architecture
-- **Auth Guard**: Password hashing with **PBKDF2** and secure session handling.
-- **Session Timeout Protection**: 30-minute inactivity window with a live **Countdown Modal Alert** and auto-logout.
+### 🔒 Security & Architecture
+- **Enterprise-Grade Authentication**: Explicit **PBKDF2 (pbkdf2:sha256)** password hashing via `werkzeug.security`. Absolutely NO plain-text storage.
+- **Active Session Guard**: A live 30-minute inactivity timeout window. Uses an animated Countdown Modal to warn administrators before automatically logging them out.
 - **ID Integrity**: Automated sequential ID rebalancing to maintain a gap-free and professional registry.
 
 ---
