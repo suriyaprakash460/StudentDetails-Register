@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}Add Student — StudentMS{% endblock %}
+{% block body_class %}bg-add{% endblock %}
 
 {% block content %}
 
@@ -14,36 +15,38 @@
               method="POST" 
               enctype="multipart/form-data"
               class="needs-validation" 
-              id="studentForm" 
+              id="addForm" 
               novalidate>
 
-            <!-- Photo Upload -->
+            <!-- Photo Upload (Add UI: Badge / Polaroid Style) -->
             <div class="mb-4 text-center">
                 <div class="mb-3">
-                    <label for="photo" class="form-label d-block text-center">Student Photo</label>
-                    <div class="position-relative d-inline-block shadow-lg rounded-circle" style="padding: 5px; background: white;">
+                    <label for="photo" class="form-label d-block text-center fw-bold text-primary">Student Portrait</label>
+                    <div class="position-relative d-inline-block p-1" style="background: rgba(99, 102, 241, 0.05); border: 2px dashed #818cf8; border-radius: 16px; transition: all 0.3s ease; animation: subtleBreathe 4s infinite ease-in-out;" onmouseover="this.style.background='rgba(99, 102, 241, 0.1)';" onmouseout="this.style.background='rgba(99, 102, 241, 0.05)';">
                         <img id="photo_preview" 
                              src="{{ url_for('static', filename='uploads/default_profile.png') }}" 
                              alt="Student Preview" 
-                             class="rounded-circle border" 
-                             style="width:120px; height:120px; object-fit:cover;">
+                             class="shadow-sm" 
+                             style="width:130px; height:160px; object-fit:cover; border-radius: 12px; background: white;">
                         <label for="photo" 
-                               class="btn btn-sm btn-primary rounded-circle position-absolute" 
-                               style="bottom:0; right:0; padding:.2rem .4rem;"
+                               class="btn btn-primary position-absolute shadow" 
+                               style="bottom:-10px; right:-15px; padding:.4rem .6rem; border-radius: 12px; transition: transform 0.2s;"
+                               onmouseover="this.style.transform='scale(1.1) rotate(5deg)'" onmouseout="this.style.transform='scale(1) rotate(0deg)'"
                                title="Upload Photo">
                             <i class="bi bi-upload"></i>
                             <input type="file" id="photo" name="photo" class="d-none" accept="image/*" onchange="previewImage(this)">
                         </label>
                         <button type="button" 
-                                class="btn btn-sm btn-success rounded-circle position-absolute" 
-                                style="bottom:0; left:0; padding:.2rem .4rem;"
+                                class="btn btn-warning position-absolute shadow text-dark" 
+                                style="bottom:-10px; left:-15px; padding:.4rem .6rem; border-radius: 12px; transition: transform 0.2s;"
+                                onmouseover="this.style.transform='scale(1.1) rotate(-5deg)'" onmouseout="this.style.transform='scale(1) rotate(0deg)'"
                                 title="Live Camera"
                                 data-bs-toggle="modal"
                                 data-bs-target="#cameraModal">
                             <i class="bi bi-camera-fill"></i>
                         </button>
                     </div>
-                    <div class="mt-2 small text-muted">Click the camera icon to take a live photo or upload icon to select a file.</div>
+                    <div class="mt-3 small text-muted">Upload a clear passport-style portrait.</div>
                 </div>
             </div>
 
@@ -214,6 +217,28 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<!-- ══ LIVE CAMERA MODAL ═════════════════════════════════════════════════ -->
+<div class="modal fade" id="cameraModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h6 class="modal-title fw-bold"><i class="bi bi-camera-fill me-2"></i>Live Capture</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center bg-black p-0 overflow-hidden" style="min-height: 300px;">
+                <video id="webcamVideo" autoplay muted playsinline style="width:100%; height:auto;"></video>
+                <canvas id="captureCanvas" class="d-none"></canvas>
+            </div>
+            <div class="modal-footer border-0 d-flex justify-content-center pb-4">
+                <button class="btn btn-success px-4 fw-bold" onclick="capturePhoto()">
+                    <i class="bi bi-record-circle me-1"></i>Capture Now
+                </button>
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 /**
  * GEOGRAPHY DATA SERVICE
@@ -302,30 +327,48 @@ function capturePhoto() {
     }, 'image/png');
 }
 
+let GEODATA = {};
 let COURSE_DATA = {};
 
 async function initGeodata() {
+    console.log('[GEODATA] Starting initialization...');
     try {
+        console.log('[GEODATA] Fetching JSON files...');
         const [geoRes, courseRes] = await Promise.all([
             fetch('/static/india_geodata.json'),
             fetch('/static/courses.json')
         ]);
         
+        console.log('[GEODATA] Parsing JSON...');
         GEODATA = await geoRes.json();
         COURSE_DATA = await courseRes.json();
+        console.log('[GEODATA] JSON loaded:', { 
+            states: Object.keys(GEODATA).length, 
+            courseLevels: Object.keys(COURSE_DATA).length 
+        });
         
         // Populate States
-        const states = Object.keys(GEODATA).sort();
-        states.forEach(s => el.state.add(new Option(s, s)));
+        if (el.state) {
+            const states = Object.keys(GEODATA).sort();
+            states.forEach(s => el.state.add(new Option(s, s)));
+            console.log('[GEODATA] States populated:', states.length);
+        } else {
+            console.error('[GEODATA] el.state is NULL!');
+        }
 
         // Initialize Course Levels
-        const levels = Object.keys(COURSE_DATA);
-        levels.forEach(l => el.cLevel.add(new Option(l, l)));
-
-        // Initialize Automated Fields (Age/Admission)
+        if (el.cLevel) {
+            const levels = Object.keys(COURSE_DATA);
+            levels.forEach(l => el.cLevel.add(new Option(l, l)));
+            console.log('[GEODATA] Course levels populated:', levels.length);
+        }
+        
+        // Initialize Automated Fields
+        console.log('[GEODATA] Initializing automated fields...');
         initAutomatedFields();
+        console.log('[GEODATA] Initialization COMPLETE.');
     } catch (e) {
-        console.error("Failed to load data", e);
+        console.error('[GEODATA] FATAL ERROR:', e);
     }
 }
 
@@ -360,73 +403,6 @@ function calculateAge() {
     
     el.ageDisp.value = `${age} Years`;
     el.ageHidden.value = age;
-}
-
-/** 1.1 DATE SELECTOR SETUP (D-M-Y ALIGNMENT) **/
-function setupDatePickers() {
-    const years = [], days = [];
-    const currentYear = new Date().getFullYear();
-    
-    // Days 1-31
-    for (let i = 1; i <= 31; i++) days.push(String(i).padStart(2, '0'));
-    // Years: Multi-century range (1920 to 3050)
-    for (let i = 3050; i >= 1920; i--) years.push(i);
-
-    const dDay = document.getElementById('dob_day'),
-          dMon = document.getElementById('dob_month'),
-          dYear = document.getElementById('dob_year'),
-          dHid = document.getElementById('dob_hidden');
-
-    const aDay = document.getElementById('adm_day'),
-          aMon = document.getElementById('adm_month'),
-          aYear = document.getElementById('adm_year'),
-          aHid = document.getElementById('adm_hidden');
-
-    // Populate selects
-    days.forEach(d => {
-        dDay.add(new Option(d, d));
-        aDay.add(new Option(d, d));
-    });
-    
-    // Shared multi-century range for both selectors
-    years.forEach(y => {
-        dYear.add(new Option(y, y));
-        aYear.add(new Option(y, y));
-    });
-
-    const syncDOB = () => {
-        if(dDay.value && dMon.value && dYear.value) 
-            dHid.value = `${dYear.value}-${dMon.value}-${dDay.value}`;
-    };
-    const syncADM = () => {
-        if(aDay.value && aMon.value && aYear.value) 
-            aHid.value = `${aYear.value}-${aMon.value}-${aDay.value}`;
-    };
-
-    [dDay, dMon, dYear].forEach(s => s.addEventListener('change', syncDOB));
-    [aDay, aMon, aYear].forEach(s => s.addEventListener('change', syncADM));
-    
-    // Initial sync if values exist (re-render)
-    if(dHid.value) {
-        const p = dHid.value.split('-');
-        if(p.length === 3) { dYear.value = p[0]; dMon.value = p[1]; dDay.value = p[2]; }
-    }
-    if(aHid.value) {
-        const p = aHid.value.split('-');
-        if(p.length === 3) { aYear.value = p[0]; aMon.value = p[1]; aDay.value = p[2]; }
-    }
-}
-
-/** 1.1.1 AGE SELECTOR SETUP **/
-function setupAgePicker() {
-    const ageSelect = document.getElementById('age');
-    const existingAge = "{{ age | default('') }}";
-    
-    for (let i = 1; i <= 120; i++) {
-        const opt = new Option(i, i);
-        if (existingAge && i == existingAge) opt.selected = true;
-        ageSelect.add(opt);
-    }
 }
 
 /** 1.2 COURSE SELECTION LOGIC **/
@@ -485,11 +461,13 @@ el.dist.addEventListener('change', function() {
 
 /** 3. UPDATE PREVIEW & HIDDEN INPUT **/
 function updatePreview() {
+    const pin = el.pinInput.value.trim();
     const parts = [
         el.village.value.trim(),
         el.taluk.value.trim(),
         el.dist.value || '',
         el.state.value || '',
+        pin ? `PIN: ${pin}` : '',
         'India'
     ].filter(p => p && !p.includes('Select'));
     
@@ -499,6 +477,7 @@ function updatePreview() {
 }
 
 el.taluk.addEventListener('change', updatePreview);
+el.pinInput.addEventListener('input', updatePreview);
 
 /** 3.1 NATIONWIDE VILLAGE/POST-OFFICE SEARCH **/
 let searchTimer;
@@ -521,7 +500,6 @@ el.village.addEventListener('input', function(e) {
                 const posts = data[0].PostOffice;
                 el.vOpts.innerHTML = '';
                 posts.slice(0, 15).forEach(p => {
-                    // format: Village Name, District, State (PIN: 123456)
                     const val = `${p.Name}, ${p.District}, ${p.State} (PIN: ${p.Pincode})`;
                     const opt = document.createElement('option');
                     opt.value = val;
@@ -534,22 +512,14 @@ el.village.addEventListener('input', function(e) {
     }, 500);
 });
 
-// Detect when user selects an option from the datalist
 el.village.addEventListener('change', function() {
     const val = this.value;
     if (val.includes('(PIN: ')) {
-        // Auto-fill logic
         const parts = val.split(',').map(s => s.trim());
         if (parts.length >= 3) {
             const vName = parts[0];
-            const dName = parts[1];
-            const sNamePart = parts[2].split('(')[0].trim();
             const pinPart = val.match(/\(PIN: (\d+)\)/);
-            
-            // Set Village name to just the name part
             this.value = vName;
-            
-            // Trigger Pincode search to fill the rest reliably
             if (pinPart && pinPart[1]) {
                 el.pinInput.value = pinPart[1];
                 el.btnPin.click();
@@ -637,14 +607,12 @@ if (nameInput) {
 document.getElementById('addForm').addEventListener('submit', function (e) {
     const btn = document.getElementById('submitBtn');
     
-    // Validate Course
     if (!el.cHidden.value) {
         e.preventDefault();
         alert('Please select a valid Course level, field and name.');
         return;
     }
 
-    // Validate Address
     if (!el.hiddenAddr.value || !el.state.value || !el.dist.value || el.dist.value.includes('Select')) {
         e.preventDefault();
         alert('Please fill out all address fields correctly.');
@@ -654,26 +622,4 @@ document.getElementById('addForm').addEventListener('submit', function (e) {
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Enrolling…';
 });
 </script>
-
-<!-- ══ LIVE CAMERA MODAL ═════════════════════════════════════════════════ -->
-<div class="modal fade" id="cameraModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden">
-            <div class="modal-header bg-dark text-white border-0 py-3">
-                <h6 class="modal-title fw-bold"><i class="bi bi-camera-fill me-2"></i>Live Capture</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center bg-black p-0 overflow-hidden" style="min-height: 300px;">
-                <video id="webcamVideo" autoplay muted playsinline style="width:100%; height:auto;"></video>
-                <canvas id="captureCanvas" class="d-none"></canvas>
-            </div>
-            <div class="modal-footer border-0 d-flex justify-content-center pb-4">
-                <button class="btn btn-success px-4 fw-bold" onclick="capturePhoto()">
-                    <i class="bi bi-record-circle me-1"></i>Capture Now
-                </button>
-                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}

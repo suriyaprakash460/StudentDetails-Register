@@ -32,17 +32,96 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #f1f5f9;
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0, transparent 50%), 
-                radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.05) 0, transparent 50%),
-                radial-gradient(at 0% 100%, rgba(99, 102, 241, 0.1) 0, transparent 50%);
-            background-attachment: fixed;
             color: var(--text);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            background-color: transparent !important;
+            transition: background 0.5s ease;
+        }
+
+        /* ── GLOBAL BLURRED BACKGROUND IMAGE ──────────────────────── */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: url("{{ url_for('static', filename='library_students_bg.png') }}");
+            background-size: cover;
+            background-position: center;
+            filter: blur(14px) brightness(0.9);
+            transform: scale(1.05);
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        /* ── SMOOTH ANIMATIONS ────────────────────────────────────── */
+        @keyframes floatPulse {
+            0%   { transform: translateY(0px); box-shadow: 0 10px 25px -5px rgba(52, 211, 153, 0.4); }
+            50%  { transform: translateY(-6px); box-shadow: 0 15px 35px -5px rgba(52, 211, 153, 0.6); }
+            100% { transform: translateY(0px); box-shadow: 0 10px 25px -5px rgba(52, 211, 153, 0.4); }
+        }
+        @keyframes dashSpin {
+            to { stroke-dashoffset: -20; }
+        }
+        @keyframes subtleBreathe {
+            0% { transform: scale(1); box-shadow: 0 0 0 rgba(99, 102, 241, 0); }
+            50% { transform: scale(1.03); box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
+            100% { transform: scale(1); box-shadow: 0 0 0 rgba(99, 102, 241, 0); }
+        }
+
+        /* ── DYNAMIC PAGE BACKGROUND OVERLAYS ─────────────────────── */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            pointer-events: none;
+            transition: background 0.5s ease;
+        }
+
+        .bg-default::after {
+            background-color: rgba(241, 245, 249, 0.85);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.1) 0, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.1) 0, transparent 50%),
+                radial-gradient(at 0% 100%, rgba(99, 102, 241, 0.15) 0, transparent 50%);
+        }
+
+        .bg-view::after {
+            background-color: rgba(248, 250, 252, 0.88);
+            background-image: 
+                radial-gradient(at 80% 0%, rgba(56, 189, 248, 0.2) 0, transparent 50%), 
+                radial-gradient(at 0% 100%, rgba(139, 92, 246, 0.2) 0, transparent 50%);
+        }
+
+        .bg-add::after {
+            background-color: rgba(250, 250, 249, 0.88);
+            background-image: 
+                radial-gradient(at 20% 0%, rgba(244, 63, 94, 0.15) 0, transparent 40%),
+                radial-gradient(at 80% 100%, rgba(245, 158, 11, 0.15) 0, transparent 50%);
+        }
+
+        .bg-edit::after {
+            background-color: rgba(253, 244, 255, 0.88);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(217, 70, 239, 0.18) 0, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.15) 0, transparent 50%);
+        }
+
+        .bg-auth { color: #f8fafc; }
+        .bg-auth::after {
+            background-color: rgba(15, 23, 42, 0.85); /* Dark overlay */
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.45) 0, transparent 40%), 
+                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.45) 0, transparent 40%);
+        }
+
+        .bg-index::after {
+            background-color: rgba(240, 253, 244, 0.88);
+            background-image: 
+                radial-gradient(at 0% 50%, rgba(34, 197, 94, 0.2) 0, transparent 50%),
+                radial-gradient(at 100% 50%, rgba(14, 165, 233, 0.2) 0, transparent 50%);
         }
 
         /* ── NAVBAR ─────────────────────────────── */
@@ -127,7 +206,7 @@
             to   { opacity: 1; transform: translateY(0); }
         }
 
-        /* ── CARD ────────────────────────────────── */
+        /* ── CARD (with dynamic page-specific styles) ────────────── */
         .content-card {
             background: var(--surface);
             backdrop-filter: var(--glass);
@@ -136,13 +215,38 @@
             border-radius: var(--radius);
             box-shadow: var(--shadow);
             padding: 2.5rem;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.3s ease;
         }
         .content-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 20px 50px -15px rgba(0,0,0,0.15);
         }
-        @media (max-width: 576px) { .content-card { padding: 1.25rem; } }
+
+        /* Unique model/card designs per page */
+        .bg-add .content-card {
+            border-top: 5px solid #f43f5e;
+            box-shadow: 0 15px 35px rgba(244, 63, 94, 0.1);
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 12px;
+        }
+        .bg-edit .content-card {
+            border: 2px solid rgba(217, 70, 239, 0.3);
+            box-shadow: 0 20px 50px -10px rgba(217, 70, 239, 0.15);
+            border-radius: 36px;
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .bg-view .content-card {
+            border: none;
+            box-shadow: 0 10px 40px -10px rgba(56, 189, 248, 0.2);
+            border-radius: 20px;
+            background: #ffffff;
+        }
+        .bg-index .content-card {
+            border-left: 5px solid #22c55e;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(34, 197, 94, 0.1);
+        }
+
+        @media (max-width: 576px) { .content-card { padding: 1.25rem; border-radius: 12px !important; } }
 
         /* ── TYPOGRAPHY ──────────────────────────── */
         .page-title {
@@ -291,7 +395,7 @@
 
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body class="{% block body_class %}bg-default{% endblock %}">
 
 <!-- ══ NAVBAR ══════════════════════════════════════════════════════════════ -->
 <nav class="navbar navbar-expand-lg navbar-dark">
@@ -378,7 +482,7 @@
 
 <!-- ══ FOOTER ═══════════════════════════════════════════════════════════════ -->
 <footer>
-    &copy; 2024 StudentMS &mdash; Built with <i class="bi bi-heart-fill text-danger" style="font-size:.7rem"></i> Flask &amp; MySQL
+    &copy; 2024 Student Details
 </footer>
 
 

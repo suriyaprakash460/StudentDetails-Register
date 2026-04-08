@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}Students — StudentMS{% endblock %}
+{% block body_class %}bg-view{% endblock %}
 
 {% block content %}
 
@@ -50,10 +51,12 @@
             <tr id="row-{{ s[0] }}">
                 <td data-label="ID"><span class="badge" style="background:var(--primary-l);color:var(--primary);font-size:.82rem;font-weight:700">{{ s[0] }}</span></td>
                 <td data-label="Photo">
-                    <img src="{{ url_for('static', filename='uploads/' + s[7]) }}" 
-                         alt="Profile" 
-                         class="rounded-circle border" 
-                         style="width:36px; height:36px; object-fit:cover;">
+                    <div class="position-relative d-inline-block" style="transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1;" onmouseover="this.style.transform='scale(1.8) rotate(2deg)'; this.style.zIndex='10'" onmouseout="this.style.transform='scale(1) rotate(0deg)'; this.style.zIndex='1'">
+                        <img src="{{ url_for('static', filename='uploads/' + s[7]) }}" 
+                             alt="Profile" 
+                             class="shadow-sm border border-2 border-info" 
+                             style="width:40px; height:40px; object-fit:cover; border-radius: 10px; background: white;">
+                    </div>
                 </td>
                 <td data-label="Name" class="fw-600" style="font-weight:600">{{ s[1] }}</td>
                 <td data-label="Age">{{ s[2] }}</td>
@@ -199,10 +202,12 @@
                 <span class="badge" style="background:var(--primary-l);color:var(--primary);font-size:.82rem;font-weight:700">${s.id}</span>
             </td>
             <td data-label="Photo">
-                <img src="/static/uploads/${s.photo}" 
-                     alt="Profile" 
-                     class="rounded-circle border" 
-                     style="width:36px; height:36px; object-fit:cover;">
+                <div class="position-relative d-inline-block" style="transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1;" onmouseover="this.style.transform='scale(1.8) rotate(2deg)'; this.style.zIndex='10'" onmouseout="this.style.transform='scale(1) rotate(0deg)'; this.style.zIndex='1'">
+                    <img src="/static/uploads/${s.photo}" 
+                         alt="Profile" 
+                         class="shadow-sm border border-2 border-info" 
+                         style="width:40px; height:40px; object-fit:cover; border-radius: 10px; background: white;">
+                </div>
             </td>
             <td data-label="Name" style="font-weight:600">${escHtml(s.name)}</td>
             <td data-label="Age">${s.age}</td>

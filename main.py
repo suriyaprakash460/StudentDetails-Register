@@ -312,7 +312,7 @@ def add_student():
         if errors:
             for err in errors:
                 flash(err, "danger")
-            return render_template("add.html", name=name, age=age, dob=dob, course=course, address=address, admission_date=adm_date)
+            return render_template("add.html", name=name, age=age_val, dob=dob, course=course, address=address, admission_date=adm_date)
 
         try:
             # ── FIND SMALLEST MISSING ID ─────────────────────────────────────
@@ -348,7 +348,7 @@ def add_student():
         except Exception as e:
             app.logger.error(f"[ADD_STUDENT] DB error: {e}")
             flash("Failed to add student. Please try again.", "danger")
-            return render_template("add.html", name=name, age=age, dob=dob, course=course, address=address, admission_date=adm_date)
+            return render_template("add.html", name=name, age=age_val, dob=dob, course=course, address=address, admission_date=adm_date)
 
     return render_template("add.html")
 

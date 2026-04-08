@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}Edit Student #{{ student[0] }} — StudentMS{% endblock %}
+{% block body_class %}bg-edit{% endblock %}
 
 {% block content %}
 
@@ -25,33 +26,34 @@
 
             <input type="hidden" name="current_photo" value="{{ student[7] }}">
 
-            <!-- Photo Update -->
+            <!-- Photo Update (Edit UI: Squircle / Gradient Glow) -->
             <div class="mb-4 text-center">
                 <div class="mb-3">
-                    <label class="form-label d-block text-center">Update Photo</label>
-                    <div class="position-relative d-inline-block shadow-lg rounded-circle" style="padding: 5px; background: white;">
-                        <img id="photo_preview" 
-                             src="{{ url_for('static', filename='uploads/' + student[7]) }}" 
-                             alt="Student Preview" 
-                             class="rounded-circle border shadow-sm" 
-                             style="width:120px; height:120px; object-fit:cover;">
+                    <label class="form-label d-block text-center fw-bold text-success">Profile Avatar</label>
+                    <div class="position-relative d-inline-block p-1" style="background: linear-gradient(135deg, #34d399, #818cf8); border-radius: 32px; padding: 4px; box-shadow: 0 10px 25px -5px rgba(52, 211, 153, 0.4); transition: transform 0.3s ease; animation: floatPulse 3s infinite ease-in-out;" onmouseover="this.style.animationPlayState='paused'; this.style.transform='translateY(-5px)'" onmouseout="this.style.animationPlayState='running'; this.style.transform='translateY(0)'">
+                        <div style="background: white; border-radius: 28px; padding: 4px; display: flex; align-items: center; justify-content: center;">
+                            <img id="photo_preview" 
+                                 src="{{ url_for('static', filename='uploads/' + student[7]) }}" 
+                                 alt="Student Preview" 
+                                 style="width:125px; height:125px; object-fit:cover; border-radius: 24px;">
+                        </div>
                         <label for="photo" 
-                               class="btn btn-sm btn-primary rounded-circle position-absolute" 
-                               style="bottom:0; right:0; padding:.2rem .4rem;"
+                               class="btn btn-light position-absolute shadow-sm border" 
+                               style="bottom:-10px; right:-10px; padding:.45rem .55rem; border-radius: 50%; color: #4f46e5;"
                                title="Upload Photo">
-                            <i class="bi bi-upload"></i>
+                            <i class="bi bi-cloud-arrow-up-fill" style="font-size:1.1rem"></i>
                             <input type="file" id="photo" name="photo" class="d-none" accept="image/*" onchange="previewImage(this)">
                         </label>
                         <button type="button" 
-                                class="btn btn-sm btn-success rounded-circle position-absolute" 
-                                style="bottom:0; left:0; padding:.2rem .4rem;"
+                                class="btn btn-dark position-absolute shadow border border-secondary" 
+                                style="top:-10px; left:-10px; padding:.45rem .55rem; border-radius: 50%;"
                                 title="Live Camera"
                                 data-bs-toggle="modal"
                                 data-bs-target="#cameraModal">
-                            <i class="bi bi-camera-fill"></i>
+                            <i class="bi bi-camera-video-fill" style="color:#34d399;font-size:1.1rem"></i>
                         </button>
                     </div>
-                    <div class="mt-2 small text-muted">Click the camera to take a live photo or upload icon to change file.</div>
+                    <div class="mt-4 small text-muted">Update avatar by clicking upload or camera.</div>
                 </div>
             </div>
 
@@ -220,6 +222,28 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<!-- ══ LIVE CAMERA MODAL ═════════════════════════════════════════════════ -->
+<div class="modal fade" id="cameraModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h6 class="modal-title fw-bold"><i class="bi bi-camera-fill me-2"></i>Live Capture</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center bg-black p-0 overflow-hidden" style="min-height: 300px;">
+                <video id="webcamVideo" autoplay muted playsinline style="width:100%; height:auto;"></video>
+                <canvas id="captureCanvas" class="d-none"></canvas>
+            </div>
+            <div class="modal-footer border-0 d-flex justify-content-center pb-4">
+                <button class="btn btn-success px-4 fw-bold" onclick="capturePhoto()">
+                    <i class="bi bi-record-circle me-1"></i>Capture Now
+                </button>
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 /**
  * GEOGRAPHY DATA SERVICE
@@ -303,6 +327,7 @@ function capturePhoto() {
     }, 'image/png');
 }
 
+let GEODATA = {};
 let COURSE_DATA = {};
 
 async function init() {
@@ -316,12 +341,16 @@ async function init() {
         COURSE_DATA = await courseRes.json();
         
         // Populate States
-        const states = Object.keys(GEODATA).sort();
-        states.forEach(s => el.state.add(new Option(s, s)));
+        if (el.state) {
+            const states = Object.keys(GEODATA).sort();
+            states.forEach(s => el.state.add(new Option(s, s)));
+        }
 
         // Initialize Course Levels
-        const levels = Object.keys(COURSE_DATA);
-        levels.forEach(l => el.cLevel.add(new Option(l, l)));
+        if (el.cLevel) {
+            const levels = Object.keys(COURSE_DATA);
+            levels.forEach(l => el.cLevel.add(new Option(l, l)));
+        }
 
         // Initialize Automated Fields (Age/Admission)
         initAutomatedFields();
@@ -334,71 +363,22 @@ async function init() {
     }
 }
 
-/** 1.1 DATE SELECTOR SETUP (D-M-Y ALIGNMENT) **/
-function setupDatePickers() {
-    const years = [], days = [];
-    const currentYear = new Date().getFullYear();
-    
-    // Days 1-31
-    for (let i = 1; i <= 31; i++) days.push(String(i).padStart(2, '0'));
-    // Years: Multi-century range (1920 to 3050)
-    for (let i = 3050; i >= 1920; i--) years.push(i);
-
-    const dDay = document.getElementById('dob_day'),
-          dMon = document.getElementById('dob_month'),
-          dYear = document.getElementById('dob_year'),
-          dHid = document.getElementById('dob_hidden');
-
-    const aDay = document.getElementById('adm_day'),
-          aMon = document.getElementById('adm_month'),
-          aYear = document.getElementById('adm_year'),
-          aHid = document.getElementById('adm_hidden');
-
-    // Populate selects
-    days.forEach(d => {
-        dDay.add(new Option(d, d));
-        aDay.add(new Option(d, d));
-    });
-    
-    // Shared multi-century range for both selectors
-    years.forEach(y => {
-        dYear.add(new Option(y, y));
-        aYear.add(new Option(y, y));
-    });
-
-    const syncDOB = () => {
-        if(dDay.value && dMon.value && dYear.value) 
-            dHid.value = `${dYear.value}-${dMon.value}-${dDay.value}`;
-    };
-    const syncADM = () => {
-        if(aDay.value && aMon.value && aYear.value) 
-            aHid.value = `${aYear.value}-${aMon.value}-${aDay.value}`;
-    };
-
-    [dDay, dMon, dYear].forEach(s => s.addEventListener('change', syncDOB));
-    [aDay, aMon, aYear].forEach(s => s.addEventListener('change', syncADM));
-    
-    // Initial sync from existing student data
-    if(dHid.value) {
-        const p = dHid.value.split('-');
-        if(p.length === 3) { dYear.value = p[0]; dMon.value = p[1]; dDay.value = p[2]; }
-    }
-    if(aHid.value) {
-        const p = aHid.value.split('-');
-        if(p.length === 3) { aYear.value = p[0]; aMon.value = p[1]; aDay.value = p[2]; }
-    }
+function initAutomatedFields() {
+    el.dob.addEventListener('change', calculateAge);
+    if (el.dob.value) calculateAge();
 }
 
-/** 1.1.1 AGE SELECTOR SETUP **/
-function setupAgePicker() {
-    const ageSelect = document.getElementById('age');
-    const existingAge = "{{ student[2] }}";
-    
-    for (let i = 1; i <= 120; i++) {
-        const opt = new Option(i, i);
-        if (existingAge && i == existingAge) opt.selected = true;
-        ageSelect.add(opt);
-    }
+function calculateAge() {
+    const dobValue = el.dob.value;
+    if (!dobValue) return;
+    const birthDate = new Date(dobValue);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
+    if (age < 0) age = 0;
+    el.ageDisp.value = `${age} Years`;
+    el.ageHidden.value = age;
 }
 
 /** 1.2 COURSE SELECTION & PARSING **/
@@ -458,12 +438,23 @@ function parseExistingAddress() {
     const raw = `{{ student[5] | e }}`;
     const parts = raw.split(',').map(s => s.trim());
     
-    // Pattern: Village, Taluk, District, State, Country
     if (parts.length >= 4) {
-        const stateVal = parts[parts.length - 2];
-        const distVal = parts[parts.length - 3];
-        const talukVal = parts[parts.length - 4];
-        const villageVal = parts.slice(0, parts.length - 4).join(', ');
+        const indiaIdx = parts.findIndex(p => p.toLowerCase() === 'india');
+        if (indiaIdx === -1) return;
+
+        let pin = '';
+        let stateIdx = indiaIdx - 1;
+        
+        if (parts[stateIdx].toUpperCase().startsWith('PIN:')) {
+            pin = parts[stateIdx].replace('PIN:', '').trim();
+            el.pinInput.value = pin;
+            stateIdx--;
+        }
+
+        const stateVal = parts[stateIdx];
+        const distVal = parts[stateIdx - 1];
+        const talukVal = parts[stateIdx - 2];
+        const villageVal = parts.slice(0, stateIdx - 2).join(', ');
 
         const matchedState = Object.keys(GEODATA).find(s => s.toLowerCase() === stateVal.toLowerCase());
         
@@ -485,8 +476,8 @@ function parseExistingAddress() {
                         if (foundTaluk) {
                             el.taluk.value = foundTaluk;
                         } else {
-                            // Fallback if taluk name changed or missing
-                            el.taluk.add(new Option(talukVal, talukVal));
+                            const opt = new Option(talukVal, talukVal);
+                            el.taluk.add(opt);
                             el.taluk.value = talukVal;
                         }
                         el.village.value = villageVal;
@@ -495,8 +486,6 @@ function parseExistingAddress() {
                 }
             }, 50);
         }
-        el.village.value = raw;
-        updatePreview();
     }
 }
 
@@ -504,7 +493,6 @@ function parseExistingAddress() {
 el.state.addEventListener('change', function() {
     el.dist.innerHTML = '<option value="" disabled selected>Select District</option>';
     el.taluk.innerHTML = '<option value="" disabled selected>Select District first</option>';
-    
     if (GEODATA[this.value]) {
         const districts = Object.keys(GEODATA[this.value]).sort();
         districts.forEach(d => el.dist.add(new Option(d, d)));
@@ -514,7 +502,6 @@ el.state.addEventListener('change', function() {
 
 el.dist.addEventListener('change', function() {
     el.taluk.innerHTML = '<option value="" disabled selected>Select Taluk / Tehsil</option>';
-    
     const stateVal = el.state.value;
     if (GEODATA[stateVal] && GEODATA[stateVal][this.value]) {
         const talukas = GEODATA[stateVal][this.value];
@@ -524,43 +511,39 @@ el.dist.addEventListener('change', function() {
 });
 
 function updatePreview() {
+    const pin = el.pinInput.value.trim();
     const parts = [
         el.village.value.trim(),
         el.taluk.value.trim(),
         el.dist.value || '',
         el.state.value || '',
+        pin ? `PIN: ${pin}` : '',
         'India'
-    ].filter(p => p && !p.includes('Select'));
-    
+    ].filter(p => (p && !p.includes('Select') && !p.includes('Current:')));
     const full = parts.join(', ');
     el.hiddenAddr.value = full;
     el.preview.textContent = full ? `Current: ${full}` : 'Preview: (Incomplete)';
 }
 
 el.taluk.addEventListener('change', updatePreview);
+el.pinInput.addEventListener('input', updatePreview);
 
 /** 3.1 NATIONWIDE VILLAGE/POST-OFFICE SEARCH **/
 let searchTimer;
 el.village.addEventListener('input', function(e) {
     updatePreview();
-    
-    // Only search if user is typing (not selecting from list)
     if (e.inputType === 'insertReplacementText' || e.inputType === undefined) return;
-
     const query = this.value.trim();
     if (query.length < 4) return;
-
     clearTimeout(searchTimer);
     searchTimer = setTimeout(async () => {
         try {
             const res = await fetch(`https://api.postalpincode.in/postoffice/${encodeURIComponent(query)}`);
             const data = await res.json();
-            
             if (data[0].Status === "Success") {
                 const posts = data[0].PostOffice;
                 el.vOpts.innerHTML = '';
                 posts.slice(0, 15).forEach(p => {
-                    // format: Village Name, District, State (PIN: 123456)
                     const val = `${p.Name}, ${p.District}, ${p.State} (PIN: ${p.Pincode})`;
                     const opt = document.createElement('option');
                     opt.value = val;
@@ -573,20 +556,14 @@ el.village.addEventListener('input', function(e) {
     }, 500);
 });
 
-// Detect when user selects an option from the datalist
 el.village.addEventListener('change', function() {
     const val = this.value;
     if (val.includes('(PIN: ')) {
-        // Auto-fill logic
         const parts = val.split(',').map(s => s.trim());
         if (parts.length >= 3) {
             const vName = parts[0];
             const pinPart = val.match(/\(PIN: (\d+)\)/);
-            
-            // Set Village name to just the name part
             this.value = vName;
-            
-            // Trigger Pincode search to fill the rest reliably
             if (pinPart && pinPart[1]) {
                 el.pinInput.value = pinPart[1];
                 el.btnPin.click();
@@ -602,47 +579,36 @@ el.btnPin.addEventListener('click', async function() {
         alert('Please enter a valid 6-digit Pincode.');
         return;
     }
-
     this.disabled = true;
     this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
     try {
         const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
         const data = await res.json();
-
         if (data[0].Status === "Success") {
             const posts = data[0].PostOffice;
             const item = posts[0];
-            
             let apiState = item.State.replace(/\s&\s/g, ' And ');
             if (apiState === "Andaman & Nicobar Islands") apiState = "Andaman And Nicobar Islands";
-            
             const matchedState = Object.keys(GEODATA).find(s => s.toLowerCase() === apiState.toLowerCase());
-            
             if (matchedState) {
                 el.state.value = matchedState;
                 el.state.dispatchEvent(new Event('change'));
-                
                 setTimeout(() => {
                     const districtNames = Object.keys(GEODATA[matchedState]);
                     const matchedDist = districtNames.find(d => d.toLowerCase().includes(item.District.toLowerCase()) || item.District.toLowerCase().includes(d.toLowerCase()));
-                    
                     if (matchedDist) {
                         el.dist.value = matchedDist;
                         el.dist.dispatchEvent(new Event('change'));
-                        
                         setTimeout(() => {
                              const apiTaluk = item.Block;
                              const talukas = GEODATA[matchedState][matchedDist];
                              const foundTaluk = talukas.find(t => t.toLowerCase() === apiTaluk.toLowerCase());
-                             
                              if (foundTaluk) {
                                  el.taluk.value = foundTaluk;
                              } else if (talukas.length > 0) {
                                  const matchedName = talukas.find(t => t.toLowerCase().includes(apiTaluk.toLowerCase()));
                                  if (matchedName) el.taluk.value = matchedName;
                              }
-                             
                              el.vOpts.innerHTML = posts.map(p => `<option value="${p.Name}"></option>`).join('');
                              updatePreview();
                         }, 100);
@@ -660,6 +626,8 @@ el.btnPin.addEventListener('click', async function() {
     }
 });
 
+init();
+
 // Auto Title Case for Name field
 const nameInput = document.getElementById('name');
 if (nameInput) {
@@ -668,20 +636,14 @@ if (nameInput) {
     });
 }
 
-init();
-
 /* Double-submit prevention */
 document.getElementById('editForm').addEventListener('submit', function (e) {
     const btn = document.getElementById('saveBtn');
-
-    // Validate Course
     if (!el.cHidden.value) {
         e.preventDefault();
         alert('Please select a valid Course level, field and name.');
         return;
     }
-
-    // Validate Address
     if (!el.hiddenAddr.value || !el.state.value || !el.dist.value || el.dist.value.includes('Select')) {
         e.preventDefault();
         alert('Please fill out all address fields correctly.');
@@ -691,26 +653,4 @@ document.getElementById('editForm').addEventListener('submit', function (e) {
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
 });
 </script>
-
-<!-- ══ LIVE CAMERA MODAL ═════════════════════════════════════════════════ -->
-<div class="modal fade" id="cameraModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden">
-            <div class="modal-header bg-dark text-white border-0 py-3">
-                <h6 class="modal-title fw-bold"><i class="bi bi-camera-fill me-2"></i>Live Capture</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center bg-black p-0 overflow-hidden" style="min-height: 300px;">
-                <video id="webcamVideo" autoplay muted playsinline style="width:100%; height:auto;"></video>
-                <canvas id="captureCanvas" class="d-none"></canvas>
-            </div>
-            <div class="modal-footer border-0 d-flex justify-content-center pb-4">
-                <button class="btn btn-success px-4 fw-bold" onclick="capturePhoto()">
-                    <i class="bi bi-record-circle me-1"></i>Capture Now
-                </button>
-                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
