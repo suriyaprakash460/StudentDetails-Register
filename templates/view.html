@@ -184,16 +184,39 @@
 
     let debounceTimer = null;
 
+    let currentSearchController = null;
+
+    /** Highlight matching search text */
+    function highlight(str, q) {
+        if (!str) return '';
+        const escaped = String(str)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        
+        if (!q) return escaped;
+        const safeQuery = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${safeQuery})`, 'gi');
+        return escaped.replace(regex, '<mark class="bg-warning text-dark px-1 rounded">$1</mark>');
+    }
+
+    /** Simple HTML-escape to prevent XSS */
+    function escHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
     /**
      * Build a table row HTML string from a student JSON object.
      * Mirrors the Jinja2 table row structure exactly.
      */
-    function buildRow(s) {
+    function buildRow(s, q) {
         // Format date from YYYY-MM-DD to DD-MM-YYYY for display
         const fmt = d => {
             if (!d) return '-';
             const p = d.split('-');
-            return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : d;
+            return p.length === 3 ? `${p[2]}-${p[0]}-${p[1]}` : d; // Correct format DD-MM-YYYY
         };
 
         return `
@@ -209,13 +232,13 @@
                          style="width:40px; height:40px; object-fit:cover; border-radius: 10px; background: white;">
                 </div>
             </td>
-            <td data-label="Name" style="font-weight:600">${escHtml(s.name)}</td>
+            <td data-label="Name" style="font-weight:600">${highlight(s.name, q)}</td>
             <td data-label="Age">${s.age}</td>
             <td data-label="DOB" class="small">${fmt(s.dob)}</td>
             <td data-label="Course">
-                <span class="badge bg-light text-dark border">${escHtml(s.course)}</span>
+                <span class="badge bg-light text-dark border">${highlight(s.course, q)}</span>
             </td>
-            <td data-label="Address" class="small text-muted">${escHtml(s.address)}</td>
+            <td data-label="Address" class="small text-muted">${highlight(s.address, q)}</td>
             <td data-label="Date" class="small">${fmt(s.admission_date)}</td>
             <td data-label="" class="actions-cell text-end">
                 <a href="/edit/${s.id}" class="btn btn-sm btn-warning me-1" title="Edit">
@@ -243,13 +266,6 @@
         </tr>`;
     }
 
-    /** Simple HTML-escape to prevent XSS in dynamically built rows */
-    function escHtml(str) {
-        return String(str)
-            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
     /**
      * Fetch students from the AJAX API and re-render the table.
      * Hides pagination while AJAX search is active (has a value).
@@ -258,23 +274,37 @@
         spinner.style.display = 'block';
         pagination.style.display = q ? 'none' : '';   // hide pagination during search
 
-        fetch(`/api/search?q=${encodeURIComponent(q)}`, { credentials: 'same-origin' })
-            .then(r => r.json())
-            .then(data => {
-                spinner.style.display = 'none';
-                countEl.textContent   = data.total;
+        // Update URL visually for real-time filter persistence
+        const url = new URL(window.location);
+        if (q) url.searchParams.set('q', q);
+        else   url.searchParams.delete('q');
+        window.history.replaceState({}, '', url);
 
-                if (data.students.length === 0) {
-                    tbody.innerHTML = emptyRow(q);
-                } else {
-                    tbody.innerHTML = data.students.map(buildRow).join('');
-                }
-                // Re-attach delete listeners to the newly injected buttons
-                attachDeleteListeners();
-            })
-            .catch(() => {
-                spinner.style.display = 'none';
-            });
+        // Abort previous requests if user types quickly
+        if (currentSearchController) currentSearchController.abort();
+        currentSearchController = new AbortController();
+
+        fetch(`/api/search?q=${encodeURIComponent(q)}`, { 
+            credentials: 'same-origin',
+            signal: currentSearchController.signal
+        })
+        .then(r => r.json())
+        .then(data => {
+            spinner.style.display = 'none';
+            countEl.textContent   = data.total;
+
+            if (data.students.length === 0) {
+                tbody.innerHTML = emptyRow(q);
+            } else {
+                tbody.innerHTML = data.students.map(s => buildRow(s, q)).join('');
+            }
+            // Re-attach delete listeners to the newly injected buttons
+            attachDeleteListeners();
+        })
+        .catch(err => {
+            if (err.name === 'AbortError') return; // Ignore aborts
+            spinner.style.display = 'none';
+        });
     }
 
     // Debounce: wait 320ms after last keystroke before fetching

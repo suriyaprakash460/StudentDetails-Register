@@ -140,6 +140,10 @@ def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'logged_in' not in session:
+            # Prevent redirecting AJAX fetches to HTML login page
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.path.startswith('/api/'):
+                return jsonify({"error": "Unauthorized"}), 401
+            
             flash("Please log in to access this page.", "warning")
             return redirect(url_for('login'))
         return f(*args, **kwargs)
@@ -166,7 +170,7 @@ def login():
     GET  → Render the login form.
     POST → Validate credentials:
              1. Look up username in the users table.
-             2. Use check_password_hash() to verify the stored bcrypt hash.
+             2. Use check_password_hash() to verify the stored pbkdf2 hash.
              3. On success, populate session and redirect to view_students.
              4. On failure, show a generic error (avoid username enumeration).
     """
@@ -245,8 +249,8 @@ def register():
                 flash("That username is already taken. Please choose another.", "warning")
                 return render_template("register.html", username=username)
 
-            # Hash then store — never store raw password
-            hashed_pw = generate_password_hash(password)
+            # Hash then store — never store raw password (use pbkdf2:sha256 explicitly)
+            hashed_pw = generate_password_hash(password, method="pbkdf2:sha256")
             db_execute(
                 "INSERT INTO users (username, password) VALUES (%s, %s)",
                 (username, hashed_pw), commit=True
@@ -434,12 +438,12 @@ def api_search():
             rows = db_execute(
                 """SELECT id, name, age, dob, course, address, admission_date, photo FROM students
                    WHERE name LIKE %s OR course LIKE %s OR address LIKE %s
-                   ORDER BY id ASC LIMIT 100""",
+                   ORDER BY id ASC""",
                 (like, like, like), fetch='all'
             ) or []
         else:
             rows = db_execute(
-                "SELECT id, name, age, dob, course, address, admission_date, photo FROM students ORDER BY id ASC LIMIT 100",
+                "SELECT id, name, age, dob, course, address, admission_date, photo FROM students ORDER BY id ASC",
                 fetch='all'
             ) or []
 
