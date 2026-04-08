@@ -1,4 +1,4 @@
-# 🎓 StudentMS — Intelligent Academic Registry
+#  StudentMS — Intelligent Academic Registry
 
 A premium, production-ready Full Stack Student Management System. Built with a focus on **Intelligent Address Automation**, **Real-Time Search**, and a **Sophisticated Course Selection Engine**. 
 
@@ -6,7 +6,7 @@ Designed for scalability and administrative excellence using **Flask**, **MySQL*
 
 ---
 
-## 📸 Application Showcase
+##  Application Showcase
 
 <p align="center">
   <img src="docs/screenshots/dashboard.png" width="85%" alt="Dashboard Overview">
@@ -27,9 +27,9 @@ Designed for scalability and administrative excellence using **Flask**, **MySQL*
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
-### 📍 Intelligent Geography & Address System
+###  Intelligent Geography & Address System
 - **All-India Geodata Integration**: A comprehensive cascading selector system for **State → District → Taluka → Village**.
 - **PINCODE Power-Fetch**: Enter a 6-digit PIN and click "Fetch" to auto-populate the administrative hierarchy using the **Nationwide Postal API**.
 - **Real-Time Village Suggestions**: Autocomplete search for Village and Post-Office names instantly.
@@ -39,21 +39,21 @@ Designed for scalability and administrative excellence using **Flask**, **MySQL*
 - **Comprehensive Database**: Pre-loaded with hundreds of Indian academic degrees from Medical and Engineering to Arts and Vocational fields.
 - **Auto-Parsing Logic**: Intelligent enough to parse existing student courses and auto-select the hierarchy during record updates.
 
-### 🔍 Search & UI Excellence
+###  Search & UI Excellence
 - **AJAX Live Filter**: Search through thousands of records instantly by Name, Course, or ID without a page refresh.
 - **Automated Age Calculation**: Age is instantly calculated from the **Date of Birth** calendar selection, ensuring data accuracy.
 - **Calendar-Based Input**: Modern, native calendar pickers for **Date of Birth** and **Admission Date** (System Auto-set).
 - **Live Camera Capture**: Take student photos directly from the web browser's webcam.
 - **Premium UX Design**: Fluid transitions, hover effects, and a mobile-first responsive layout powered by **Bootstrap 5**.
 
-### 🔐 Security & Architecture
+###  Security & Architecture
 - **Auth Guard**: Password hashing with **PBKDF2** and secure session handling.
 - **Session Timeout Protection**: 30-minute inactivity window with a live **Countdown Modal Alert** and auto-logout.
 - **ID Integrity**: Automated sequential ID rebalancing to maintain a gap-free and professional registry.
 
 ---
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 | Layer | Technology | Purpose |
 | :--- | :--- | :--- |
@@ -65,7 +65,7 @@ Designed for scalability and administrative excellence using **Flask**, **MySQL*
 
 ---
 
-## 🚀 Installation & Local Setup
+##  Installation & Local Setup
 
 ### 1. Database Configuration
 1. Install **MySQL Server** and create a database named `student_db`.
@@ -118,7 +118,7 @@ python main.py
 
 ---
 
-## 📂 Project Navigation
+##  Project Navigation
 ```text
 ├── main.py                # Server-side Logic & DB Controllers
 ├── docs/                  # Project Documentation
@@ -130,7 +130,7 @@ python main.py
 
 ---
 
-## 📝 License & Attribution
-Designed and Developed with ❤️ by **[Suriyaprakash S](https://github.com/suriyaprakash460)**  
+##  License & Attribution
+Designed and Developed with  by **[Suriyaprakash S](https://github.com/suriyaprakash460)**  
 *Built for educational and administrative excellence.*  
 &copy; 2024 **StudentMS** — A Suriyaprakash Venture
