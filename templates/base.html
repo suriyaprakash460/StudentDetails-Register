@@ -398,7 +398,7 @@
 
     {% block extra_head %}{% endblock %}
 </head>
-<body class="{% block body_class %}bg-default{% endblock %}">
+<body class="{% block body_class %}bg-default{% endblock %}" data-session-timeout="{{ session_timeout | default(30) }}">
 
 <!-- ══ NAVBAR ══════════════════════════════════════════════════════════════ -->
 <nav class="navbar navbar-expand-lg navbar-dark">
@@ -519,7 +519,7 @@
 <script>
 /** Global session config from Flask */
 window.SESSION_CONFIG = {
-    timeoutMinutes: {{ session_timeout | default(30) }},
+    timeoutMinutes: parseInt(document.body.getAttribute('data-session-timeout') || '30', 10),
     warningMinutes: 5,
     pingCooldownSecs: 60
 };
