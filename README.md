@@ -34,7 +34,7 @@ Designed for scalability and administrative excellence using **Flask**, **MySQL*
 - **PINCODE Power-Fetch**: Enter a 6-digit PIN and click "Fetch" to auto-populate the administrative hierarchy using the **Nationwide Postal API**.
 - **Real-Time Village Suggestions**: Autocomplete search for Village and Post-Office names instantly.
 
-### 📚 Advanced Course Selection Engine
+###  Advanced Course Selection Engine
 - **3-Tier Hierarchy**: Smart selection for **Level → Field → Course Name** (e.g., *Undergraduate → Engineering → B.Tech CSE*).
 - **Comprehensive Database**: Pre-loaded with hundreds of Indian academic degrees from Medical and Engineering to Arts and Vocational fields.
 - **Auto-Parsing Logic**: Intelligent enough to parse existing student courses and auto-select the hierarchy during record updates.
